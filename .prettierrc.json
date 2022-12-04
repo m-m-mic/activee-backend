@@ -1,4 +1,5 @@
 {
     "printWidth": 130,
-    "bracketSameLine": true
+    "bracketSameLine": true,
+    "endOfLine": "auto"
 }

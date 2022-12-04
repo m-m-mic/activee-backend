@@ -1,7 +1,7 @@
 import express from "express";
 import { helloWorld } from "./hello";
 const app = express();
-const port = 3000;
+const port = 1337;
 
 helloWorld();
 app.get("/", (req, res) => {
