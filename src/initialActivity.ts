@@ -33,6 +33,7 @@ export function updateActivityById(id: number, updatedActivity: Activity) {
   for (let i = 0; i < activities.length; i++) {
     if (activities[i].id === id) {
       activities[i] = updatedActivity;
+      console.log(activities[i]);
       return activities[i].id;
     }
   }
