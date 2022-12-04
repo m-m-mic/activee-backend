@@ -6,7 +6,6 @@ const port = 3000;
 helloWorld();
 app.get("/", (req, res) => {
   res.send("Hello World!");
-  req.header
 });
 
 app.listen(port, () => {
