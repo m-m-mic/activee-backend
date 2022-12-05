@@ -39,3 +39,13 @@ export function updateActivityById(id: number, updatedActivity: Activity) {
   }
   return null;
 }
+
+export function searchActivities(searchQuery: string) {
+  const searchResult: Activity[] = [];
+  for (const activity of activities) {
+    if (activity.name.toLowerCase().includes(searchQuery)) {
+      searchResult.push(activity);
+    }
+  }
+  return searchResult;
+}

@@ -1,6 +1,6 @@
 import cors from "cors";
 import express from "express";
-import { addActivity, getActivities, getActivityById, updateActivityById } from "./initialActivity";
+import { addActivity, getActivities, getActivityById, searchActivities, updateActivityById } from "./initialActivity";
 const app = express();
 const port = 1337;
 
@@ -34,6 +34,10 @@ app.put("/activity/:activityId", (req, res) => {
   } else {
     res.json({ activityId }).send();
   }
+});
+app.get("/search/:query", (req, res) => {
+  const searchQuery: string = req.params.query.toLowerCase();
+  res.json(searchActivities(searchQuery));
 });
 app.listen(port, () => {
   console.log(`activee backend listening on port ${port}`);
