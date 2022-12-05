@@ -13,13 +13,13 @@ app.get("/", (req, res) => {
 app.post("/activity/", (req, res) => {
   const activity = req.body;
   const activityId = addActivity(activity);
-  res.status(200).json({ activityId }).send();
+  res.json({ activityId }).send();
 });
 app.get("/activity/", (req, res) => {
   res.json(getActivities()).send();
 });
 app.get("/activity/:activityId", (req, res) => {
-  const activity = getActivityById(Number(req.params.activityId));
+  const activity = getActivityById(req.params.activityId);
   if (activity === null) {
     res.status(404).end();
   } else {
@@ -28,7 +28,7 @@ app.get("/activity/:activityId", (req, res) => {
 });
 app.put("/activity/:activityId", (req, res) => {
   const updatedActivity = req.body;
-  const activityId = updateActivityById(Number(req.params.activityId), updatedActivity);
+  const activityId = updateActivityById(req.params.activityId, updatedActivity);
   if (activityId === null) {
     res.status(404).end();
   } else {
