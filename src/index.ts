@@ -1,6 +1,7 @@
 import cors from "cors";
 import express from "express";
 import { addActivity, getActivities, getActivityById, searchActivities, updateActivityById } from "./initialActivity";
+import { addAccount, getAccount } from "./Account";
 const app = express();
 const port = 1337;
 
@@ -9,6 +10,24 @@ app.use(cors());
 app.use(express.json());
 app.get("/", (req, res) => {
   res.send("Hello World!");
+});
+app.post("/account/new", (req, res) => {
+  const initialAccount = req.body;
+  const account = addAccount(initialAccount);
+  if (account === null) {
+    res.status(403).end();
+  } else {
+    res.json(account).send();
+  }
+});
+app.post("/account/", (req, res) => {
+  const credentials = req.body;
+  const account = getAccount(credentials.email, credentials.password);
+  if (account === null) {
+    res.status(404).end();
+  } else {
+    res.json(account).send();
+  }
 });
 app.post("/activity/", (req, res) => {
   const activity = req.body;
