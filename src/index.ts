@@ -1,33 +1,49 @@
 import cors from "cors";
-import express from "express";
+import express, { Request, Response } from "express";
 import { addActivity, getActivities, getActivityById, searchActivities, updateActivityById } from "./initialActivity";
-import { addAccount, getAccount } from "./Account";
+import { registerAccount, loginAccount, getAccountById } from "./Account";
+import jwt from "jsonwebtoken";
+import { authenticateJWT, authenticatedRequest } from "./middleware/authenticateJWT";
+import dotenv from "dotenv";
+
 const app = express();
 const port = 1337;
 
-app.use(cors());
+dotenv.config({ path: "./.env" });
+export const secretToken =
+  "491e12865f278211d40575958be267f3caa6ac5e88f757e63a674b73abfa6bf62e9f6e79ca68531c72cc81cead62303557af70cbe5020efca38f7e33b304f395";
 
+app.use(cors());
 app.use(express.json());
 app.get("/", (req, res) => {
   res.send("Hello World!");
 });
-app.post("/account/new", (req, res) => {
+app.post("/account/register", (req, res) => {
   const initialAccount = req.body;
-  const account = addAccount(initialAccount);
+  const account = registerAccount(initialAccount);
   if (account === null) {
     res.status(403).end();
   } else {
-    res.json(account).send();
+    const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
+    res.json({ token: accessToken, id: account.id, type: account.type }).send();
   }
 });
-app.post("/account/", (req, res) => {
+app.post("/account/login", (req, res) => {
   const credentials = req.body;
-  const account = getAccount(credentials.email, credentials.password);
+  const account = loginAccount(credentials.email, credentials.password);
   if (account === null) {
     res.status(404).end();
   } else {
-    res.json(account).send();
+    const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
+    console.log(accessToken);
+    res.json({ token: accessToken, id: account.id, type: account.type }).send();
   }
+});
+app.get("/account/info", authenticateJWT, (req: Request, res: Response) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  const account = getAccountById(id);
+  res.json(account).send();
 });
 app.post("/activity/", (req, res) => {
   const activity = req.body;

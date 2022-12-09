@@ -11,7 +11,7 @@ export interface initialAccount {
 export interface Account extends initialAccount {
   id: string;
 }
-export function addAccount(initialAccount: initialAccount) {
+export function registerAccount(initialAccount: initialAccount) {
   const account = {
     ...initialAccount,
     id: nanoid(8),
@@ -29,13 +29,25 @@ export function addAccount(initialAccount: initialAccount) {
   fs.writeFileSync("src/json/accounts.json", json, "utf-8");
   return account;
 }
-export function getAccount(email: string, password: string) {
+export function loginAccount(email: string, password: string) {
   const data = fs.readFileSync("src/json/accounts.json", "utf-8");
   const accounts = JSON.parse(data);
   // for loop iterates over array and returns account with matching credentials
   for (const account of accounts) {
     if (account.email === email && account.password === password) {
-      return { id: account.id, type: account.type, first_name: account.first_name, last_name: account.last_name };
+      return account;
+    }
+  }
+  return null;
+}
+
+export function getAccountById(id: string) {
+  const data = fs.readFileSync("src/json/accounts.json", "utf-8");
+  const accounts = JSON.parse(data);
+  // for loop iterates over array and returns account with matching credentials
+  for (const account of accounts) {
+    if (account.id === id) {
+      return account;
     }
   }
   return null;
