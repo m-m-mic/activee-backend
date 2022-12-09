@@ -35,7 +35,7 @@ export function getAccount(email: string, password: string) {
   // for loop iterates over array and returns account with matching credentials
   for (const account of accounts) {
     if (account.email === email && account.password === password) {
-      return account;
+      return { id: account.id, type: account.type, first_name: account.first_name, last_name: account.last_name };
     }
   }
   return null;
