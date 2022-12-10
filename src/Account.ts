@@ -2,11 +2,38 @@ import { nanoid } from "nanoid";
 import fs from "fs";
 
 export interface initialAccount {
+  email: string;
+  password: string;
   type: string;
   first_name: string;
   last_name: string;
-  email: string;
-  password: string;
+  club: string;
+  birthday: number;
+  address: Address;
+  languages: Array<string>;
+  genders: Array<string>;
+  sports: Array<string>;
+  transport: Array<string>;
+  distance: number;
+  times: Array<TableDate>;
+  parent_account: RelatedAccount;
+  children_accounts: Array<RelatedAccount>;
+}
+
+interface Address {
+  street: string;
+  house_number: number;
+  zip_code: number;
+  city: string;
+}
+interface TableDate {
+  day: string;
+  starting_hour: number;
+}
+interface RelatedAccount {
+  id: number;
+  first_name: string;
+  last_name: string;
 }
 export interface Account extends initialAccount {
   id: string;
