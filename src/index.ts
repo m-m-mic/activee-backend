@@ -1,7 +1,7 @@
 import cors from "cors";
 import express, { Request, Response } from "express";
 import { addActivity, getActivities, getActivityById, searchActivities, updateActivityById } from "./initialActivity";
-import { registerAccount, loginAccount, getAccountById } from "./Account";
+import { registerAccount, loginAccount, getAccountById, updateAccountById } from "./Account";
 import jwt from "jsonwebtoken";
 import { authenticateJWT, authenticatedRequest } from "./middleware/authenticateJWT";
 import dotenv from "dotenv";
@@ -9,9 +9,8 @@ import dotenv from "dotenv";
 const app = express();
 const port = 1337;
 
-dotenv.config({ path: "./.env" });
-export const secretToken =
-  "491e12865f278211d40575958be267f3caa6ac5e88f757e63a674b73abfa6bf62e9f6e79ca68531c72cc81cead62303557af70cbe5020efca38f7e33b304f395";
+dotenv.config();
+export const secretToken = process.env.SECRET_TOKEN;
 
 app.use(cors());
 app.use(express.json());
@@ -43,6 +42,17 @@ app.get("/account/info", authenticateJWT, (req: Request, res: Response) => {
   const id = authReq.account.id;
   const account = getAccountById(id);
   res.json(account).send();
+});
+app.post("/account/info", authenticateJWT, (req: Request, res: Response) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  const updatedAccount = authReq.body;
+  const account = updateAccountById(id, updatedAccount);
+  if (account === null) {
+    res.status(500).end();
+  } else {
+    res.status(200).end();
+  }
 });
 app.post("/activity/", (req, res) => {
   const activity = req.body;

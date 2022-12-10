@@ -1,30 +1,35 @@
 import { nanoid } from "nanoid";
 import fs from "fs";
 
-export interface initialAccount {
+export interface InitialAccount {
   email: string;
   password: string;
   type: string;
   first_name: string;
   last_name: string;
-  club: string;
-  birthday: number;
+  club: string | null;
+  phone_number: string | null;
+  birthday: string | null;
   address: Address;
-  languages: Array<string>;
-  genders: Array<string>;
-  sports: Array<string>;
-  transport: Array<string>;
-  distance: number;
-  times: Array<TableDate>;
-  parent_account: RelatedAccount;
-  children_accounts: Array<RelatedAccount>;
+  languages: Array<string | null>;
+  genders: Array<string | null>;
+  sports: Array<Sport>;
+  transport: Array<string | null>;
+  distance: number | null;
+  times: Array<TableDate | null>;
+  parent_account: RelatedAccount | null;
+  children_accounts: Array<RelatedAccount | null>;
 }
 
 interface Address {
-  street: string;
-  house_number: number;
-  zip_code: number;
-  city: string;
+  street: string | null;
+  house_number: number | null;
+  zip_code: number | null;
+  city: string | null;
+}
+interface Sport {
+  value: string;
+  name: string;
 }
 interface TableDate {
   day: string;
@@ -35,10 +40,10 @@ interface RelatedAccount {
   first_name: string;
   last_name: string;
 }
-export interface Account extends initialAccount {
+export interface Account extends InitialAccount {
   id: string;
 }
-export function registerAccount(initialAccount: initialAccount) {
+export function registerAccount(initialAccount: InitialAccount) {
   const account = {
     ...initialAccount,
     id: nanoid(8),
@@ -75,6 +80,24 @@ export function getAccountById(id: string) {
   for (const account of accounts) {
     if (account.id === id) {
       return account;
+    }
+  }
+  return null;
+}
+
+export function updateAccountById(id: string, updatedAccount: Account) {
+  const data = fs.readFileSync("src/json/accounts.json", "utf-8");
+  const accounts = JSON.parse(data);
+  // for loop iterates over array
+  for (let i = 0; i < accounts.length; i++) {
+    if (accounts[i].id === id) {
+      // activity with matching id gets updated
+      accounts[i] = updatedAccount;
+      // array with updated activity is written onto activities.json
+      const json = JSON.stringify(accounts);
+      fs.writeFileSync("src/json/accounts.json", json, "utf-8");
+      // the id of the new activity is returned so the frontend can navigate to the new activity page
+      return accounts[i].id;
     }
   }
   return null;
