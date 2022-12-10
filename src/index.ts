@@ -35,7 +35,6 @@ app.post("/account/login", (req, res) => {
     res.status(404).end();
   } else {
     const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
-    console.log(accessToken);
     res.json({ token: accessToken, id: account.id, type: account.type }).send();
   }
 });
