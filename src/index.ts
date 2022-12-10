@@ -44,14 +44,13 @@ app.get("/account/info", authenticateJWT, (req: Request, res: Response) => {
   res.json(account).send();
 });
 app.post("/account/info", authenticateJWT, (req: Request, res: Response) => {
-  const authReq = req as authenticatedRequest;
-  const id = authReq.account.id;
-  const updatedAccount = authReq.body;
-  const account = updateAccountById(id, updatedAccount);
+  const updatedAccount = req.body;
+  console.log(updatedAccount);
+  const account = updateAccountById(updatedAccount);
   if (account === null) {
     res.status(500).end();
   } else {
-    res.status(200).end();
+    res.json(account).send();
   }
 });
 app.post("/activity/", (req, res) => {

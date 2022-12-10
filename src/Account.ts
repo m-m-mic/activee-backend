@@ -85,19 +85,19 @@ export function getAccountById(id: string) {
   return null;
 }
 
-export function updateAccountById(id: string, updatedAccount: Account) {
+export function updateAccountById(updatedAccount: Account) {
   const data = fs.readFileSync("src/json/accounts.json", "utf-8");
   const accounts = JSON.parse(data);
   // for loop iterates over array
   for (let i = 0; i < accounts.length; i++) {
-    if (accounts[i].id === id) {
+    if (accounts[i].id === updatedAccount.id) {
       // activity with matching id gets updated
       accounts[i] = updatedAccount;
       // array with updated activity is written onto activities.json
       const json = JSON.stringify(accounts);
       fs.writeFileSync("src/json/accounts.json", json, "utf-8");
       // the id of the new activity is returned so the frontend can navigate to the new activity page
-      return accounts[i].id;
+      return accounts[i];
     }
   }
   return null;

@@ -22,6 +22,6 @@ export const authenticateJWT = (req, res, next) => {
       next();
     });
   } else {
-    res.sendStatus(401);
+    return res.sendStatus(401);
   }
 };
