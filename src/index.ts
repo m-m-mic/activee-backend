@@ -7,16 +7,13 @@ import { authenticateJWT, authenticatedRequest } from "./middleware/authenticate
 import dotenv from "dotenv";
 
 const app = express();
-const port = 1337;
-
+const port = 3033;
 dotenv.config();
 export const secretToken = process.env.SECRET_TOKEN;
 
 app.use(cors());
 app.use(express.json());
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+app.use(express.static("public"));
 app.post("/account/register", (req, res) => {
   const initialAccount = req.body;
   const account = registerAccount(initialAccount);

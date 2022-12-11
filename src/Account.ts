@@ -23,8 +23,8 @@ export interface InitialAccount {
 
 interface Address {
   street: string | null;
-  house_number: number | null;
-  zip_code: number | null;
+  house_number: string | null;
+  zip_code: string | null;
   city: string | null;
 }
 interface Sport {

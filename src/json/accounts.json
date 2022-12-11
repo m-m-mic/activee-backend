@@ -1,1 +1,47 @@
-[{"type":"participant","first_name":"Max","last_name":"Mustermann","email":"max.mustermann@test-mail.com","password":"password","id":"wIMeh9gj"},{"type":"organisation","first_name":"Adele","last_name":"Vogt","email":"adele-vogt@tsvmuenchen.de","password":"password","id":"IEpIP5yT"},{"email":"roza.kovaci@gmail.com","password":"password","type":"participant","first_name":"Roza","last_name":"Kovaçi","club":null,"phone_number":null,"birthday":"1983-09-26","address":{"street":"Schwanthalerstraße","house_number":24,"zip_code":80336,"city":"München"},"languages":["english","montenegrin"],"genders":["female","mix"],"sports":[{"value":"basketball","name":"Basketball"},{"value":"soccer","name":"Fußball"}],"transport":["on_foot","train","car","bus"],"distance":17,"times":[{"day":"tu","starting_hour":"16"},{"day":"tu","starting_hour":"18"},{"day":"fr","starting_hour":"18"},{"day":"we","starting_hour":"18"},{"day":"su","starting_hour":"12"}],"parent_account":null,"children_account":[],"id":"-1u0zbUm"}]
+[
+  {
+    "type": "participant",
+    "first_name": "Max",
+    "last_name": "Mustermann",
+    "email": "max.mustermann@test-mail.com",
+    "password": "password",
+    "id": "wIMeh9gj"
+  },
+  {
+    "type": "organisation",
+    "first_name": "Adele",
+    "last_name": "Vogt",
+    "email": "adele-vogt@tsvmuenchen.de",
+    "password": "password",
+    "id": "IEpIP5yT"
+  },
+  {
+    "email": "roza.kovaci@gmail.com",
+    "password": "password",
+    "type": "participant",
+    "first_name": "Roza",
+    "last_name": "Kovaçi",
+    "club": null,
+    "phone_number": null,
+    "birthday": "1983-09-26",
+    "address": { "street": "Schwanthalerstraße", "house_number": "24", "zip_code": "80336", "city": "München" },
+    "languages": ["german","english", "montenegrin"],
+    "genders": ["female", "mix"],
+    "sports": [
+      { "value": "basketball", "name": "Basketball" },
+      { "value": "handball", "name": "Handball" }
+    ],
+    "transport": ["on_foot", "train", "car", "bus"],
+    "distance": 17,
+    "times": [
+      { "day": "tu", "starting_hour": "16" },
+      { "day": "tu", "starting_hour": "18" },
+      { "day": "fr", "starting_hour": "18" },
+      { "day": "we", "starting_hour": "18" },
+      { "day": "su", "starting_hour": "12" }
+    ],
+    "parent_account": null,
+    "children_account": [],
+    "id": "-1u0zbUm"
+  }
+]
