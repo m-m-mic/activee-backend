@@ -40,7 +40,7 @@ app.get("/account/info", authenticateJWT, (req: Request, res: Response) => {
   const account = getAccountById(id);
   res.json(account).send();
 });
-app.post("/account/info", authenticateJWT, (req: Request, res: Response) => {
+app.put("/account/info", authenticateJWT, (req: Request, res: Response) => {
   const updatedAccount = req.body;
   console.log(updatedAccount);
   const account = updateAccountById(updatedAccount);
