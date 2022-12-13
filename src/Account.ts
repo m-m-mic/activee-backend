@@ -17,8 +17,7 @@ export interface InitialAccount {
   transport: Array<string | null>;
   distance: number | null;
   times: Array<TableDate | null>;
-  parent_account: RelatedAccount | null;
-  children_accounts: Array<RelatedAccount | null>;
+  related_accounts: Array<RelatedAccount | null>;
 }
 
 interface Address {
@@ -42,11 +41,13 @@ interface RelatedAccount {
 }
 export interface Account extends InitialAccount {
   id: string;
+  tier: string;
 }
 export function registerAccount(initialAccount: InitialAccount) {
   const account = {
     ...initialAccount,
     id: nanoid(8),
+    tier: "parent",
   };
   const data = fs.readFileSync("src/json/accounts.json", "utf-8");
   const accounts = JSON.parse(data);
@@ -98,6 +99,40 @@ export function updateAccountById(updatedAccount: Account) {
       fs.writeFileSync("src/json/accounts.json", json, "utf-8");
       // the id of the new activity is returned so the frontend can navigate to the new activity page
       return accounts[i];
+    }
+  }
+  return null;
+}
+export function getAccountListById(id: string) {
+  const data = fs.readFileSync("src/json/accounts.json", "utf-8");
+  const accounts = JSON.parse(data);
+  for (const account of accounts) {
+    if (account.id === id && account.tier === "parent") {
+      return [
+        { id: account.id, first_name: account.first_name, last_name: account.last_name, main_profile: true },
+        ...account.related_accounts,
+      ];
+    } else if (account.id === id && account.tier === "child") {
+      for (const mainAccount of accounts) {
+        if (mainAccount.id === account.related_accounts[0].id) {
+          return [
+            { id: mainAccount.id, first_name: mainAccount.first_name, last_name: mainAccount.last_name, main_profile: true },
+            ...mainAccount.related_accounts,
+          ];
+        }
+      }
+    }
+  }
+  return null;
+}
+
+export function changeProfileById(id: string) {
+  const data = fs.readFileSync("src/json/accounts.json", "utf-8");
+  const accounts = JSON.parse(data);
+  // for loop iterates over array and returns account with matching id
+  for (const account of accounts) {
+    if (account.id === id) {
+      return account;
     }
   }
   return null;

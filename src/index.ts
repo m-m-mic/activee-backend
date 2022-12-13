@@ -1,7 +1,14 @@
 import cors from "cors";
 import express, { Request, Response } from "express";
 import { addActivity, getActivities, getActivityById, searchActivities, updateActivityById } from "./initialActivity";
-import { registerAccount, loginAccount, getAccountById, updateAccountById } from "./Account";
+import {
+  registerAccount,
+  loginAccount,
+  getAccountById,
+  updateAccountById,
+  getAccountListById,
+  changeProfileById,
+} from "./Account";
 import jwt from "jsonwebtoken";
 import { authenticateJWT, authenticatedRequest } from "./middleware/authenticateJWT";
 import dotenv from "dotenv";
@@ -21,7 +28,7 @@ app.post("/account/register", (req, res) => {
     res.status(403).end();
   } else {
     const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
-    res.json({ token: accessToken, id: account.id, type: account.type }).send();
+    res.json({ token: accessToken, id: account.id, type: account.type, tier: account.tier }).send();
   }
 });
 app.post("/account/login", (req, res) => {
@@ -31,7 +38,7 @@ app.post("/account/login", (req, res) => {
     res.status(404).end();
   } else {
     const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
-    res.json({ token: accessToken, id: account.id, type: account.type }).send();
+    res.json({ token: accessToken, id: account.id, type: account.type, tier: account.tier }).send();
   }
 });
 app.get("/account/info", authenticateJWT, (req: Request, res: Response) => {
@@ -48,6 +55,28 @@ app.put("/account/info", authenticateJWT, (req: Request, res: Response) => {
     res.status(500).end();
   } else {
     res.json(account).send();
+  }
+});
+app.get("/account/account-list", authenticateJWT, (req: Request, res: Response) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  const accountList = getAccountListById(id);
+  console.log(accountList);
+  if (accountList === null) {
+    res.status(500).end();
+  } else {
+    res.json(accountList).send();
+  }
+});
+app.post("/account/change-profile", authenticateJWT, (req, res) => {
+  const accountId = req.body.id;
+  console.log(accountId);
+  const account = changeProfileById(accountId);
+  if (account === null) {
+    res.status(404).end();
+  } else {
+    const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
+    res.json({ token: accessToken, id: account.id, type: account.type, tier: account.tier }).send();
   }
 });
 app.post("/activity/", (req, res) => {
