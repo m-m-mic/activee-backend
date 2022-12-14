@@ -1,14 +1,83 @@
 import cors from "cors";
-import express from "express";
+import express, { Request, Response } from "express";
 import { addActivity, getActivities, getActivityById, searchActivities, updateActivityById } from "./initialActivity";
+import {
+  registerAccount,
+  loginAccount,
+  getAccountById,
+  updateAccountById,
+  getAccountListById,
+  changeProfileById,
+} from "./Account";
+import jwt from "jsonwebtoken";
+import { authenticateJWT, authenticatedRequest } from "./middleware/authenticateJWT";
+import dotenv from "dotenv";
+
 const app = express();
-const port = 1337;
+const port = 3033;
+dotenv.config();
+export const secretToken = process.env.SECRET_TOKEN;
 
 app.use(cors());
-
 app.use(express.json());
-app.get("/", (req, res) => {
-  res.send("Hello World!");
+app.use(express.static("public"));
+app.post("/account/register", (req, res) => {
+  const initialAccount = req.body;
+  const account = registerAccount(initialAccount);
+  if (account === null) {
+    res.status(403).end();
+  } else {
+    const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
+    res.json({ token: accessToken, id: account.id, type: account.type, tier: account.tier }).send();
+  }
+});
+app.post("/account/login", (req, res) => {
+  const credentials = req.body;
+  const account = loginAccount(credentials.email, credentials.password);
+  if (account === null) {
+    res.status(404).end();
+  } else {
+    const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
+    res.json({ token: accessToken, id: account.id, type: account.type, tier: account.tier }).send();
+  }
+});
+app.get("/account/info", authenticateJWT, (req: Request, res: Response) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  const account = getAccountById(id);
+  res.json(account).send();
+});
+app.put("/account/info", authenticateJWT, (req: Request, res: Response) => {
+  const updatedAccount = req.body;
+  console.log(updatedAccount);
+  const account = updateAccountById(updatedAccount);
+  if (account === null) {
+    res.status(500).end();
+  } else {
+    res.json(account).send();
+  }
+});
+app.get("/account/account-list", authenticateJWT, (req: Request, res: Response) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  const accountList = getAccountListById(id);
+  console.log(accountList);
+  if (accountList === null) {
+    res.status(500).end();
+  } else {
+    res.json(accountList).send();
+  }
+});
+app.post("/account/change-profile", authenticateJWT, (req, res) => {
+  const accountId = req.body.id;
+  console.log(accountId);
+  const account = changeProfileById(accountId);
+  if (account === null) {
+    res.status(404).end();
+  } else {
+    const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
+    res.json({ token: accessToken, id: account.id, type: account.type, tier: account.tier }).send();
+  }
 });
 app.post("/activity/", (req, res) => {
   const activity = req.body;

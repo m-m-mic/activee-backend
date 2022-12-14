@@ -1,0 +1,69 @@
+[
+  {
+    "email": "adele.vogt@tsv-muenchen.de",
+    "password": "password",
+    "type": "organisation",
+    "first_name": "Adele",
+    "last_name": "Vogt",
+    "club": "TSV München",
+    "phone_number": "0123 123 123",
+    "birthday": "1999-05-27",
+    "address": { "street": "", "house_number": "", "zip_code": "", "city": "" },
+    "languages": ["german", "english"],
+    "genders": [],
+    "sports": [],
+    "transport": [],
+    "distance": null,
+    "times": [],
+    "tier": "child",
+    "related_accounts": [],
+    "id": "IEpIP5yT"
+  },
+  {
+    "email": "roza.kovaci@gmail.com",
+    "password": "password",
+    "type": "participant",
+    "first_name": "Roza",
+    "last_name": "Kovaçi",
+    "club": null,
+    "phone_number": null,
+    "birthday": "1983-09-26",
+    "address": { "street": "Schwanthalerstraße", "house_number": "24", "zip_code": "80336", "city": "München" },
+    "languages": ["german", "english", "montenegrin"],
+    "genders": ["mix", "female"],
+    "sports": [
+      { "value": "basketball", "name": "Basketball" },
+      { "value": "handball", "name": "Handball" }
+    ],
+    "transport": ["train", "bus", "on_foot"],
+    "distance": 14,
+    "times": [
+      { "day": "tu", "starting_hour": "16" },
+      { "day": "tu", "starting_hour": "18" },
+      { "day": "fr", "starting_hour": "18" },
+      { "day": "we", "starting_hour": "18" },
+      { "day": "su", "starting_hour": "12" }
+    ],
+    "tier": "parent",
+    "related_accounts": [{ "id": "etpH-h39", "first_name": "Lorik", "last_name": "Kovaçi" }],
+    "id": "-1u0zbUm"
+  },
+  {
+    "type": "participant",
+    "first_name": "Lorik",
+    "last_name": "Kovaçi",
+    "club": null,
+    "phone_number": null,
+    "birthday": "2012-05-27",
+    "address": { "street": "", "house_number": "", "zip_code": "", "city": "" },
+    "languages": [],
+    "genders": ["male", "mix"],
+    "sports": [],
+    "transport": ["bicycle", "on_foot", "bus"],
+    "distance": 8,
+    "times": [],
+    "tier": "child",
+    "related_accounts": [{ "id": "-1u0zbUm", "first_name": "Roza", "last_name": "Kovaçi" }],
+    "id": "etpH-h39"
+  }
+]
