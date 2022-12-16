@@ -1,5 +1,6 @@
 import cors from "cors";
 import express, { Request, Response } from "express";
+import mongoose from "mongoose";
 import { addActivity, getActivities, getActivityById, searchActivities, updateActivityById } from "./initialActivity";
 import {
   registerAccount,
@@ -21,6 +22,22 @@ export const secretToken = process.env.SECRET_TOKEN;
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
+
+const start = async () => {
+  try {
+    await mongoose.connect("mongodb+srv://admin:CYbHBuTWEG4mOlhR@activee.l1w6o4b.mongodb.net/test");
+    console.log("Connection to mongoDB successful");
+    app.listen(port, () => {
+      console.log(`activee backend listening on port ${port}`);
+    });
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+};
+
+start();
+
 app.post("/account/register", (req, res) => {
   const initialAccount = req.body;
   const account = registerAccount(initialAccount);
@@ -107,7 +124,4 @@ app.put("/activity/:activityId", (req, res) => {
 app.get("/search/:query", (req, res) => {
   const searchQuery: string = req.params.query.toLowerCase();
   res.json(searchActivities(searchQuery));
-});
-app.listen(port, () => {
-  console.log(`activee backend listening on port ${port}`);
 });
