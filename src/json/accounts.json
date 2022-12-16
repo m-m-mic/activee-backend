@@ -35,8 +35,8 @@
       { "value": "basketball", "name": "Basketball" },
       { "value": "handball", "name": "Handball" }
     ],
-    "transport": ["train", "bus", "on_foot"],
-    "distance": 14,
+    "transport": ["train", "bus", "on_foot", "bicycle"],
+    "distance": 18,
     "times": [
       { "day": "tu", "starting_hour": "16" },
       { "day": "tu", "starting_hour": "18" },

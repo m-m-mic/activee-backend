@@ -13,6 +13,7 @@ import {
 import jwt from "jsonwebtoken";
 import { authenticateJWT, authenticatedRequest } from "./middleware/authenticateJWT";
 import dotenv from "dotenv";
+import { Activity } from "./models/activities";
 
 const app = express();
 const port = 3033;
@@ -25,7 +26,7 @@ app.use(express.static("public"));
 
 const start = async () => {
   try {
-    await mongoose.connect("mongodb+srv://admin:CYbHBuTWEG4mOlhR@activee.l1w6o4b.mongodb.net/test");
+    await mongoose.connect("mongodb+srv://admin:CYbHBuTWEG4mOlhR@activee.l1w6o4b.mongodb.net/activee-db");
     console.log("Connection to mongoDB successful");
     app.listen(port, () => {
       console.log(`activee backend listening on port ${port}`);
@@ -96,10 +97,10 @@ app.post("/account/change-profile", authenticateJWT, (req, res) => {
     res.json({ token: accessToken, id: account.id, type: account.type, tier: account.tier }).send();
   }
 });
-app.post("/activity/", (req, res) => {
-  const activity = req.body;
-  const activityId = addActivity(activity);
-  res.json({ activityId }).send();
+app.post("/activity/", async (req, res) => {
+  const newActivity = new Activity({ ...req.body });
+  const insertedActivity = await newActivity.save();
+  return res.status(201).json(insertedActivity);
 });
 app.get("/activity/", (req, res) => {
   res.json(getActivities()).send();
