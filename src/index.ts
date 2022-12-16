@@ -1,7 +1,7 @@
 import cors from "cors";
 import express, { Request, Response } from "express";
 import mongoose from "mongoose";
-import { searchActivities } from "./initialActivity";
+import { searchActivities } from "./scripts/activitiesScripts";
 import {
   registerAccount,
   loginAccount,
@@ -13,7 +13,7 @@ import {
 import jwt from "jsonwebtoken";
 import { authenticateJWT, authenticatedRequest } from "./middleware/authenticateJWT";
 import dotenv from "dotenv";
-import { Activity } from "./models/activities";
+import { Activity, ActivityType } from "./models/activities";
 
 const app = express();
 const port = 3033;
@@ -24,7 +24,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-const start = async () => {
+const connectAndStartBackend = async () => {
   try {
     await mongoose.connect("mongodb+srv://admin:CYbHBuTWEG4mOlhR@activee.l1w6o4b.mongodb.net/activee-db");
     console.log("Connection to mongoDB successful");
@@ -37,7 +37,7 @@ const start = async () => {
   }
 };
 
-start();
+connectAndStartBackend();
 
 app.post("/account/register", (req, res) => {
   const initialAccount = req.body;
@@ -120,6 +120,6 @@ app.put("/activity/:activityId", async (req, res) => {
 });
 app.get("/search/:query", async (req, res) => {
   const searchQuery: string = req.params.query.toLowerCase();
-  const activitiesList = await Activity.find();
+  const activitiesList: ActivityType[] = await Activity.find();
   res.json(searchActivities(searchQuery, activitiesList)).send();
 });

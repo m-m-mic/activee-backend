@@ -20,11 +20,11 @@ export interface InitialAccount {
   related_accounts: Array<RelatedAccount | null>;
 }
 
-interface Address {
-  street: string | null;
-  house_number: string | null;
-  zip_code: string | null;
-  city: string | null;
+export interface Address {
+  street: string;
+  house_number: string;
+  zip_code: string;
+  city: string;
 }
 interface Sport {
   value: string;
@@ -94,7 +94,7 @@ export function updateAccountById(updatedAccount: Account) {
     if (accounts[i].id === updatedAccount.id) {
       // activity with matching id gets updated
       accounts[i] = updatedAccount;
-      // array with updated activity is written onto activities.json
+      // array with updated activity is written onto account.json
       const json = JSON.stringify(accounts);
       fs.writeFileSync("src/json/accounts.json", json, "utf-8");
       // the id of the new activity is returned so the frontend can navigate to the new activity page
