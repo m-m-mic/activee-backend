@@ -1,7 +1,7 @@
 import cors from "cors";
 import express, { Request, Response } from "express";
 import mongoose from "mongoose";
-import { addActivity, getActivities, getActivityById, searchActivities, updateActivityById } from "./initialActivity";
+import { searchActivities } from "./initialActivity";
 import {
   registerAccount,
   loginAccount,
@@ -99,30 +99,27 @@ app.post("/account/change-profile", authenticateJWT, (req, res) => {
 });
 app.post("/activity/", async (req, res) => {
   const newActivity = new Activity({ ...req.body });
-  const insertedActivity = await newActivity.save();
+  const insertedActivity = await newActivity.save().catch((err) => err);
   return res.status(201).json(insertedActivity);
 });
-app.get("/activity/", (req, res) => {
-  res.json(getActivities()).send();
+app.get("/activity/", async (req, res) => {
+  const activitiesList = await Activity.find();
+  return res.status(200).json(activitiesList);
 });
-app.get("/activity/:activityId", (req, res) => {
-  const activity = getActivityById(req.params.activityId);
-  if (activity === null) {
-    res.status(404).end();
-  } else {
-    res.json(activity).send();
-  }
+app.get("/activity/:activityId", async (req, res) => {
+  const id = req.params.activityId;
+  const activity = await Activity.findById(id).catch((err) => err);
+  return res.status(200).json(activity);
 });
-app.put("/activity/:activityId", (req, res) => {
+app.put("/activity/:activityId", async (req, res) => {
   const updatedActivity = req.body;
-  const activityId = updateActivityById(req.params.activityId, updatedActivity);
-  if (activityId === null) {
-    res.status(404).end();
-  } else {
-    res.json({ activityId }).send();
-  }
+  const id = req.params.activityId;
+  await Activity.updateOne({ id }, updatedActivity);
+  const activity = await Activity.findById(id).catch((err) => err);
+  return res.status(200).json(activity);
 });
-app.get("/search/:query", (req, res) => {
+app.get("/search/:query", async (req, res) => {
   const searchQuery: string = req.params.query.toLowerCase();
-  res.json(searchActivities(searchQuery));
+  const activitiesList = await Activity.find();
+  res.json(searchActivities(searchQuery, activitiesList)).send();
 });

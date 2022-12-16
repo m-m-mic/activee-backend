@@ -1,5 +1,7 @@
 import fs from "fs";
 import { nanoid } from "nanoid";
+import mongoose from "mongoose";
+import { Activity } from "./models/activities";
 
 // TypeScript interface determines what attributes 'InitialActivity' and 'Activity' can have and what types they should be to prevent unintended type coercion
 export interface InitialActivity {
@@ -10,6 +12,22 @@ export interface InitialActivity {
 export interface Activity extends InitialActivity {
   id: string;
 }
+
+export function searchActivities(searchQuery: string, activities: any) {
+  const searchResult: any = [];
+  // for loop iterates over array and checks if activity name includes search query
+  for (const activity of activities) {
+    if (
+      activity.name.toLowerCase().includes(searchQuery) ||
+      activity.club.toLowerCase().includes(searchQuery) ||
+      activity.sport.name.toLowerCase().includes(searchQuery)
+    ) {
+      searchResult.push(activity);
+    }
+  }
+  return searchResult;
+}
+
 // addActivity writes a new activity to the activities.json file
 export function addActivity(initialActivity: InitialActivity) {
   // each activity is given a unique id (using nanoid library) so all activities can be properly distinguished
@@ -60,17 +78,4 @@ export function updateActivityById(id: string, updatedActivity: Activity) {
     }
   }
   return null;
-}
-
-export function searchActivities(searchQuery: string) {
-  const searchResult: Activity[] = [];
-  const data = fs.readFileSync("src/json/activities.json", "utf-8");
-  const activities = JSON.parse(data);
-  // for loop iterates over array and checks if activity name includes search query
-  for (const activity of activities) {
-    if (activity.name.toLowerCase().includes(searchQuery)) {
-      searchResult.push(activity);
-    }
-  }
-  return searchResult;
 }
