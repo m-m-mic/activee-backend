@@ -14,6 +14,7 @@ import jwt from "jsonwebtoken";
 import { authenticateJWT, authenticatedRequest } from "./middleware/authenticateJWT";
 import dotenv from "dotenv";
 import { Activity, ActivityType } from "./models/activities";
+import { Account } from "./models/accounts";
 
 const app = express();
 const port = 3033;
@@ -39,41 +40,58 @@ const connectAndStartBackend = async () => {
 
 connectAndStartBackend();
 
-app.post("/account/register", (req, res) => {
-  const initialAccount = req.body;
-  const account = registerAccount(initialAccount);
-  if (account === null) {
-    res.status(403).end();
-  } else {
-    const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
-    res.json({ token: accessToken, id: account.id, type: account.type, tier: account.tier }).send();
-  }
+app.post("/account/register", async (req, res) => {
+  Account.findOne({ email: req.body.email }).then((user) => {
+    if (user) {
+      return res.status(400).end();
+    } else {
+      const newAccount = new Account({ ...req.body });
+      newAccount.save();
+      const accessToken = jwt.sign({ id: newAccount.id, type: newAccount.type }, secretToken);
+      return res
+        .json({
+          token: accessToken,
+          id: newAccount.id,
+          type: newAccount.type,
+          tier: newAccount.tier,
+        })
+        .send();
+    }
+  });
 });
 app.post("/account/login", (req, res) => {
   const credentials = req.body;
-  const account = loginAccount(credentials.email, credentials.password);
-  if (account === null) {
-    res.status(404).end();
-  } else {
-    const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
-    res.json({ token: accessToken, id: account.id, type: account.type, tier: account.tier }).send();
-  }
+  Account.findOne({ email: credentials.email, password: credentials.password }).then((user) => {
+    if (user) {
+      const accessToken = jwt.sign({ id: user.id, type: user.type }, secretToken);
+      return res
+        .json({
+          token: accessToken,
+          id: user.id,
+          type: user.type,
+          tier: user.tier,
+        })
+        .send();
+    }
+  });
 });
 app.get("/account/info", authenticateJWT, (req: Request, res: Response) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
-  const account = getAccountById(id);
-  res.json(account).send();
+  Account.findOne({ _id: id }).then((user) => {
+    if (user) {
+      return res.json(user).send();
+    }
+  });
 });
 app.put("/account/info", authenticateJWT, (req: Request, res: Response) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
   const updatedAccount = req.body;
   console.log(updatedAccount);
-  const account = updateAccountById(updatedAccount);
-  if (account === null) {
-    res.status(500).end();
-  } else {
-    res.json(account).send();
-  }
+  Account.updateOne({ _id: id }, updatedAccount).then((user) => {
+    res.json(user).send();
+  });
 });
 app.get("/account/account-list", authenticateJWT, (req: Request, res: Response) => {
   const authReq = req as authenticatedRequest;
@@ -94,7 +112,14 @@ app.post("/account/change-profile", authenticateJWT, (req, res) => {
     res.status(404).end();
   } else {
     const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
-    res.json({ token: accessToken, id: account.id, type: account.type, tier: account.tier }).send();
+    res
+      .json({
+        token: accessToken,
+        id: account.id,
+        type: account.type,
+        tier: account.tier,
+      })
+      .send();
   }
 });
 app.post("/activity/", async (req, res) => {
