@@ -2,19 +2,13 @@ import cors from "cors";
 import express, { Request, Response } from "express";
 import mongoose from "mongoose";
 import { searchActivities } from "./scripts/activitiesScripts";
-import {
-  registerAccount,
-  loginAccount,
-  getAccountById,
-  updateAccountById,
-  getAccountListById,
-  changeProfileById,
-} from "./Account";
+import { getAccountListById } from "./scripts/accountScripts";
 import jwt from "jsonwebtoken";
 import { authenticateJWT, authenticatedRequest } from "./middleware/authenticateJWT";
 import dotenv from "dotenv";
-import { Activity, ActivityType } from "./models/activities";
+import { Activity } from "./models/activities";
 import { Account } from "./models/accounts";
+import { AccountType, ActivityType } from "./interfaces";
 
 const app = express();
 const port = 3033;
@@ -41,46 +35,46 @@ const connectAndStartBackend = async () => {
 connectAndStartBackend();
 
 app.post("/account/register", async (req, res) => {
-  Account.findOne({ email: req.body.email }).then((user) => {
-    if (user) {
+  Account.findOne({ email: req.body.email }).then((account) => {
+    if (account) {
       return res.status(400).end();
     } else {
       const newAccount = new Account({ ...req.body });
       newAccount.save();
       const accessToken = jwt.sign({ id: newAccount.id, type: newAccount.type }, secretToken);
-      return res
-        .json({
-          token: accessToken,
-          id: newAccount.id,
-          type: newAccount.type,
-          tier: newAccount.tier,
-        })
-        .send();
+      return res.json({
+        token: accessToken,
+        id: newAccount.id,
+        type: newAccount.type,
+        tier: newAccount.tier,
+      });
     }
   });
 });
 app.post("/account/login", (req, res) => {
   const credentials = req.body;
-  Account.findOne({ email: credentials.email, password: credentials.password }).then((user) => {
-    if (user) {
-      const accessToken = jwt.sign({ id: user.id, type: user.type }, secretToken);
-      return res
-        .json({
-          token: accessToken,
-          id: user.id,
-          type: user.type,
-          tier: user.tier,
-        })
-        .send();
+  Account.findOne({ email: credentials.email, password: credentials.password }).then((account) => {
+    if (account) {
+      const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
+      return res.json({
+        token: accessToken,
+        id: account.id,
+        type: account.type,
+        tier: account.tier,
+      });
+    } else {
+      return res.status(404).end();
     }
   });
 });
 app.get("/account/info", authenticateJWT, (req: Request, res: Response) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
-  Account.findOne({ _id: id }).then((user) => {
-    if (user) {
-      return res.json(user).send();
+  Account.findOne({ _id: id }).then((account) => {
+    if (account) {
+      return res.send(account);
+    } else {
+      return res.status(404).end();
     }
   });
 });
@@ -89,38 +83,66 @@ app.put("/account/info", authenticateJWT, (req: Request, res: Response) => {
   const id = authReq.account.id;
   const updatedAccount = req.body;
   console.log(updatedAccount);
-  Account.updateOne({ _id: id }, updatedAccount).then((user) => {
-    res.json(user).send();
+  Account.updateOne({ _id: id }, updatedAccount).then((account) => {
+    if (account) {
+      res.send(account);
+    } else {
+      return res.status(404).end();
+    }
   });
 });
-app.get("/account/account-list", authenticateJWT, (req: Request, res: Response) => {
+app.get("/account/account-list", authenticateJWT, async (req: Request, res: Response) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
-  const accountList = getAccountListById(id);
+  const accounts: AccountType[] = await Account.find();
+  const accountList = getAccountListById(id, accounts);
   console.log(accountList);
   if (accountList === null) {
     res.status(500).end();
   } else {
-    res.json(accountList).send();
+    res.send(accountList);
   }
+});
+
+// FUNKTIONIERT NOCH NICHT RICHTIG
+app.post("/account/create-profile", authenticateJWT, async (req, res) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  let newProfile = req.body;
+  const newAccount = new Account({ ...newProfile });
+  newAccount.save().then((account) => {
+    newProfile = account;
+  });
+  await Account.updateOne(
+    { id },
+    {
+      $addToSet: { related_accounts: { _id: newProfile.id, first_name: newProfile.first_name, last_name: newProfile.last_name } },
+    }
+  );
+  const accessToken = await jwt.sign({ id: newProfile.id, type: newProfile.type }, secretToken);
+  return res.json({
+    token: accessToken,
+    id: newProfile.id,
+    type: newProfile.type,
+    tier: newProfile.tier,
+  });
 });
 app.post("/account/change-profile", authenticateJWT, (req, res) => {
   const accountId = req.body.id;
   console.log(accountId);
-  const account = changeProfileById(accountId);
-  if (account === null) {
-    res.status(404).end();
-  } else {
-    const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
-    res
-      .json({
+  Account.findOne({ _id: accountId }).then((account) => {
+    if (account) {
+      const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
+      return res.json({
         token: accessToken,
         id: account.id,
         type: account.type,
         tier: account.tier,
-      })
-      .send();
-  }
+      });
+    } else {
+      return res.status(404).end();
+    }
+  });
 });
 app.post("/activity/", async (req, res) => {
   const newActivity = new Activity({ ...req.body });
@@ -146,5 +168,5 @@ app.put("/activity/:activityId", async (req, res) => {
 app.get("/search/:query", async (req, res) => {
   const searchQuery: string = req.params.query.toLowerCase();
   const activitiesList: ActivityType[] = await Activity.find();
-  res.json(searchActivities(searchQuery, activitiesList)).send();
+  res.send(searchActivities(searchQuery, activitiesList));
 });

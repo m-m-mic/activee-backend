@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 
+// Mongoose Schema für einen Account
 const AccountSchema = new mongoose.Schema({
-  email: { type: String, unique: true },
+  email: { type: String, trim: true, unique: true, sparse: true },
   password: String,
   type: { type: String, required: true },
   tier: {
@@ -22,29 +23,17 @@ const AccountSchema = new mongoose.Schema({
     },
     _id: false,
   },
-  languages: {
-    type: [{ _id: String, name: String }],
-  },
-  genders: {
-    type: [{ _id: String, name: String }],
-  },
-  sports: {
-    type: [{ _id: String, name: String }],
-  },
-  transport: {
-    type: [{ _id: String, name: String }],
-  },
+  languages: [{ _id: String, name: String }],
+  genders: [String],
+  sports: [{ _id: String, name: String }],
+  transport: [String],
   distance: Number,
   times: {
     type: [{ day: String, starting_hour: String }],
     _id: false,
   },
-  related_accounts: {
-    type: [{ _id: String, first_name: String, last_name: String }],
-  },
-  activities: {
-    type: [{ _id: String, name: String, sport: { _id: String, name: String } }],
-  },
+  related_accounts: [{ _id: String, first_name: String, last_name: String }],
+  activities: [{ _id: String, name: String, sport: { _id: String, name: String } }],
 });
 
 export const Account = mongoose.model("Account", AccountSchema);

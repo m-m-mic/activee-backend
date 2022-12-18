@@ -1,4 +1,4 @@
-import { ActivityType } from "../models/activities";
+import { ActivityType } from "../interfaces";
 
 export function searchActivities(searchQuery: string, activities: ActivityType[]) {
   const searchResult: ActivityType[] = [];
