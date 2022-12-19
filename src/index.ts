@@ -53,18 +53,20 @@ app.post("/account/register", async (req, res) => {
 });
 app.post("/account/login", (req, res) => {
   const credentials = req.body;
-  Account.findOne({ email: credentials.email, password: credentials.password }).then((account) => {
-    if (account) {
-      const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
-      return res.json({
-        token: accessToken,
-        id: account.id,
-        type: account.type,
-        tier: account.tier,
-      });
-    } else {
+  Account.findOne({ email: credentials.email }).then((account) => {
+    if (!account) {
       return res.status(404).end();
     }
+    if (account.password != credentials.password) {
+      return res.status(403).end();
+    }
+    const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
+    return res.json({
+      token: accessToken,
+      id: account.id,
+      type: account.type,
+      tier: account.tier,
+    });
   });
 });
 app.get("/account/info", authenticateJWT, (req: Request, res: Response) => {
