@@ -126,6 +126,19 @@ app.post("/account/create-profile", authenticateJWT, async (req, res) => {
     tier: newAccount.tier,
   });
 });
+app.post("/account/delete-profile", authenticateJWT, async (req, res) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  const deletedProfileId = req.body.id;
+  await Account.deleteOne({ _id: deletedProfileId });
+  await Account.updateOne(
+    { id },
+    {
+      $pull: { related_accounts: { _id: deletedProfileId } },
+    }
+  );
+  return res.status(200).end();
+});
 app.post("/account/change-profile", authenticateJWT, (req, res) => {
   const accountId = req.body.id;
   console.log(accountId);
