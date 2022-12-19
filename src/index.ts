@@ -18,6 +18,7 @@ export const secretToken = process.env.SECRET_TOKEN;
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
+mongoose.set("strictQuery", true);
 
 const connectAndStartBackend = async () => {
   try {
@@ -84,7 +85,6 @@ app.put("/account/info", authenticateJWT, (req: Request, res: Response) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
   const updatedAccount = req.body;
-  console.log(updatedAccount);
   Account.updateOne({ _id: id }, updatedAccount).then((account) => {
     if (account) {
       res.send(account);
@@ -141,7 +141,6 @@ app.post("/account/delete-profile", authenticateJWT, async (req, res) => {
 });
 app.post("/account/change-profile", authenticateJWT, (req, res) => {
   const accountId = req.body.id;
-  console.log(accountId);
   Account.findOne({ _id: accountId }).then((account) => {
     if (account) {
       const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
@@ -161,21 +160,35 @@ app.post("/activity/", async (req, res) => {
   const insertedActivity = await newActivity.save().catch((err) => err);
   return res.status(201).json(insertedActivity);
 });
-app.get("/activity/", async (req, res) => {
-  const activitiesList = await Activity.find();
-  return res.status(200).json(activitiesList);
+app.get("/activity/", (req, res) => {
+  Activity.find().then((list) => {
+    if (list) {
+      return res.send(list);
+    } else {
+      return res.status(404).end();
+    }
+  });
 });
-app.get("/activity/:activityId", async (req, res) => {
+app.get("/activity/:activityId", (req, res) => {
   const id = req.params.activityId;
-  const activity = await Activity.findById(id).catch((err) => err);
-  return res.status(200).json(activity);
+  Activity.findOne({ _id: id }).then((activity) => {
+    if (activity) {
+      res.send(activity);
+    } else {
+      return res.status(404).end();
+    }
+  });
 });
 app.put("/activity/:activityId", async (req, res) => {
   const updatedActivity = req.body;
   const id = req.params.activityId;
-  await Activity.updateOne({ id }, updatedActivity);
-  const activity = await Activity.findById(id).catch((err) => err);
-  return res.status(200).json(activity);
+  await Activity.updateOne({ _id: id }, updatedActivity).then((activity) => {
+    if (activity) {
+      res.send(activity);
+    } else {
+      res.status(404).end();
+    }
+  });
 });
 app.get("/search/:query", async (req, res) => {
   const searchQuery: string = req.params.query.toLowerCase();
