@@ -106,27 +106,24 @@ app.get("/account/account-list", authenticateJWT, async (req: Request, res: Resp
   }
 });
 
-// FUNKTIONIERT NOCH NICHT RICHTIG
 app.post("/account/create-profile", authenticateJWT, async (req, res) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
-  let newProfile = req.body;
+  const newProfile = req.body;
   const newAccount = new Account({ ...newProfile });
-  newAccount.save().then((account) => {
-    newProfile = account;
-  });
+  await newAccount.save();
   await Account.updateOne(
     { id },
     {
-      $addToSet: { related_accounts: { _id: newProfile.id, first_name: newProfile.first_name, last_name: newProfile.last_name } },
+      $addToSet: { related_accounts: { _id: newAccount.id, first_name: newAccount.first_name, last_name: newAccount.last_name } },
     }
   );
-  const accessToken = await jwt.sign({ id: newProfile.id, type: newProfile.type }, secretToken);
+  const accessToken = await jwt.sign({ id: newAccount.id, type: newAccount.type }, secretToken);
   return res.json({
     token: accessToken,
-    id: newProfile.id,
-    type: newProfile.type,
-    tier: newProfile.tier,
+    id: newAccount.id,
+    type: newAccount.type,
+    tier: newAccount.tier,
   });
 });
 app.post("/account/change-profile", authenticateJWT, (req, res) => {
