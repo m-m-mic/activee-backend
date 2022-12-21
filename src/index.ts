@@ -108,7 +108,7 @@ app.patch("/account/info", authenticateJWT, async (req: Request, res: Response) 
   const updatedValues = req.body;
   if (mongoose.Types.ObjectId.isValid(id)) {
     try {
-      const updated = await Account.findOneAndUpdate({ _id: id }, updatedValues, { runValidators: true });
+      const updated = await Account.findOneAndUpdate({ _id: id }, updatedValues, { new: true, runValidators: true });
       if (!updated) {
         return res.status(404).send("Account not found");
       }
