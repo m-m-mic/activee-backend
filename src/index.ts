@@ -87,6 +87,9 @@ app.get("/account/info", authenticateJWT, async (req: Request, res: Response) =>
   if (mongoose.Types.ObjectId.isValid(id)) {
     try {
       const requestedAccount = await Account.findOne({ _id: id });
+      if (!requestedAccount) {
+        res.status(404).send("Account not found");
+      }
       return res.send(requestedAccount);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -105,8 +108,11 @@ app.patch("/account/info", authenticateJWT, async (req: Request, res: Response) 
   const updatedValues = req.body;
   if (mongoose.Types.ObjectId.isValid(id)) {
     try {
-      await Account.updateOne({ _id: id }, updatedValues, { runValidators: true });
-      return res.send("User successfully updated");
+      const updated = await Account.findOneAndUpdate({ _id: id }, updatedValues, { runValidators: true });
+      if (!updated) {
+        return res.status(404).send("Account not found");
+      }
+      return res.send(updated);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
@@ -125,7 +131,7 @@ app.get("/account/profile-list", authenticateJWT, async (req: Request, res: Resp
     try {
       const accounts: AccountType[] = await Account.find();
       const profileList = await getAccountListById(id, accounts);
-      res.send(profileList);
+      return res.send(profileList);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
@@ -181,7 +187,10 @@ app.delete("/account/delete-profile", authenticateJWT, async (req, res) => {
   const deletedProfileId = req.body.id;
   if (mongoose.Types.ObjectId.isValid(id) && mongoose.Types.ObjectId.isValid(deletedProfileId)) {
     try {
-      await Account.deleteOne({ _id: deletedProfileId });
+      const deleted = await Account.findOneAndDelete({ _id: deletedProfileId });
+      if (!deleted) {
+        return res.status(404).send("Profile not found");
+      }
       await Account.updateOne(
         { id },
         {
@@ -258,6 +267,9 @@ app.get("/activity/:activityId", async (req, res) => {
   if (mongoose.Types.ObjectId.isValid(id)) {
     try {
       const requestedActivity = await Activity.findOne({ _id: id });
+      if (!requestedActivity) {
+        return res.status(404).send("Activity not found");
+      }
       res.send(requestedActivity);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -275,8 +287,11 @@ app.patch("/activity/:activityId", async (req, res) => {
   const id = req.params.activityId;
   if (mongoose.Types.ObjectId.isValid(id)) {
     try {
-      await Activity.updateOne({ _id: id }, updatedActivity, { runValidators: true });
-      return res.send("Activity successfully updated");
+      const updated = await Activity.findOneAndUpdate({ _id: id }, updatedActivity, { new: true, runValidators: true });
+      if (!updated) {
+        return res.status(404).send("Activity not found");
+      }
+      return res.send(updated);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
