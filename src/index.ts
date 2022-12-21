@@ -35,163 +35,254 @@ const connectAndStartBackend = async () => {
 
 connectAndStartBackend();
 
+// POST-Request für Registrierung/Neuerstellung eines Accounts
 app.post("/account/register", async (req, res) => {
-  Account.findOne({ email: req.body.email }).then((account) => {
-    if (account) {
-      return res.status(400).end();
-    } else {
-      const newAccount = new Account({ ...req.body });
-      newAccount.save();
-      const accessToken = jwt.sign({ id: newAccount.id, type: newAccount.type }, secretToken);
-      return res.json({
-        token: accessToken,
-        id: newAccount.id,
-        type: newAccount.type,
-        tier: newAccount.tier,
-      });
-    }
-  });
-});
-app.post("/account/login", (req, res) => {
-  const credentials = req.body;
-  Account.findOne({ email: credentials.email }).then((account) => {
-    if (!account) {
-      return res.status(404).end();
-    }
-    if (account.password != credentials.password) {
-      return res.status(403).end();
-    }
-    const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
-    return res.json({
+  try {
+    const newAccount = new Account({ ...req.body });
+    await newAccount.save();
+    const accessToken = jwt.sign({ id: newAccount.id, type: newAccount.type }, secretToken);
+    return res.status(201).send({
       token: accessToken,
-      id: account.id,
-      type: account.type,
-      tier: account.tier,
+      id: newAccount.id,
+      type: newAccount.type,
+      tier: newAccount.tier,
     });
-  });
-});
-app.get("/account/info", authenticateJWT, (req: Request, res: Response) => {
-  const authReq = req as authenticatedRequest;
-  const id = authReq.account.id;
-  Account.findOne({ _id: id }).then((account) => {
-    if (account) {
-      return res.send(account);
-    } else {
-      return res.status(404).end();
-    }
-  });
-});
-app.put("/account/info", authenticateJWT, (req: Request, res: Response) => {
-  const authReq = req as authenticatedRequest;
-  const id = authReq.account.id;
-  const updatedAccount = req.body;
-  Account.updateOne({ _id: id }, updatedAccount).then((account) => {
-    if (account) {
-      res.send(account);
-    } else {
-      return res.status(404).end();
-    }
-  });
-});
-app.get("/account/account-list", authenticateJWT, async (req: Request, res: Response) => {
-  const authReq = req as authenticatedRequest;
-  const id = authReq.account.id;
-  const accounts: AccountType[] = await Account.find();
-  const accountList = getAccountListById(id, accounts);
-  console.log(accountList);
-  if (accountList === null) {
-    res.status(500).end();
-  } else {
-    res.send(accountList);
+  } catch (error) {
+    // @ts-ignore
+    return res.status(400).send(error.message);
   }
 });
 
-app.post("/account/create-profile", authenticateJWT, async (req, res) => {
-  const authReq = req as authenticatedRequest;
-  const id = authReq.account.id;
-  const newProfile = req.body;
-  const newAccount = new Account({ ...newProfile });
-  await newAccount.save();
-  await Account.updateOne(
-    { id },
-    {
-      $addToSet: { related_accounts: { _id: newAccount.id, first_name: newAccount.first_name, last_name: newAccount.last_name } },
-    }
-  );
-  const accessToken = await jwt.sign({ id: newAccount.id, type: newAccount.type }, secretToken);
-  return res.json({
-    token: accessToken,
-    id: newAccount.id,
-    type: newAccount.type,
-    tier: newAccount.tier,
-  });
-});
-app.post("/account/delete-profile", authenticateJWT, async (req, res) => {
-  const authReq = req as authenticatedRequest;
-  const id = authReq.account.id;
-  const deletedProfileId = req.body.id;
-  await Account.deleteOne({ _id: deletedProfileId });
-  await Account.updateOne(
-    { id },
-    {
-      $pull: { related_accounts: { _id: deletedProfileId } },
-    }
-  );
-  return res.status(200).end();
-});
-app.post("/account/change-profile", authenticateJWT, (req, res) => {
-  const accountId = req.body.id;
-  Account.findOne({ _id: accountId }).then((account) => {
-    if (account) {
+// POST-Request für Anmeldung eines Accounts
+app.post("/account/login", async (req, res) => {
+  const credentials = req.body;
+  try {
+    Account.findOne({ email: credentials.email }).then((account) => {
+      if (!account) {
+        return res.status(404).end();
+      }
+      if (account.password != credentials.password) {
+        return res.status(403).end();
+      }
       const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
-      return res.json({
+      return res.send({
         token: accessToken,
         id: account.id,
         type: account.type,
         tier: account.tier,
       });
-    } else {
-      return res.status(404).end();
-    }
-  });
+    });
+  } catch (error) {
+    // @ts-ignore
+    return res.status(400).send(error.message);
+  }
 });
+
+// GET-Request für Informationen über den eigenen Account
+app.get("/account/info", authenticateJWT, async (req: Request, res: Response) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    try {
+      const requestedAccount = await Account.findOne({ _id: id });
+      return res.send(requestedAccount);
+    } catch (error) {
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
+  } else {
+    return res.status(403).send("Invalid account id");
+  }
+});
+
+// PATCH-Request zum Aktualisieren der eigenen Informationen
+app.patch("/account/info", authenticateJWT, async (req: Request, res: Response) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  const updatedValues = req.body;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    try {
+      await Account.updateOne({ _id: id }, updatedValues, { runValidators: true });
+      return res.send("User successfully updated");
+    } catch (error) {
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
+  } else {
+    return res.status(403).send("Invalid account id");
+  }
+});
+
+// GET-Request der Unterprofile des eigenen Accounts
+app.get("/account/profile-list", authenticateJWT, async (req: Request, res: Response) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    try {
+      const accounts: AccountType[] = await Account.find();
+      const profileList = await getAccountListById(id, accounts);
+      res.send(profileList);
+    } catch (error) {
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
+  } else {
+    return res.status(403).send("Invalid account id");
+  }
+});
+
+// POST-Request zum Hinzufügen eines neuen Profils
+app.post("/account/create-profile", authenticateJWT, async (req, res) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  const addedProfile = req.body;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    try {
+      const newProfile = new Account({ ...addedProfile });
+      await newProfile.save();
+      await Account.updateOne(
+        { id },
+        {
+          $addToSet: {
+            related_accounts: {
+              _id: newProfile.id,
+              first_name: newProfile.first_name,
+              last_name: newProfile.last_name,
+            },
+          },
+        }
+      );
+      const accessToken = await jwt.sign({ id: newProfile.id, type: newProfile.type }, secretToken);
+      return res.send({
+        token: accessToken,
+        id: newProfile.id,
+        type: newProfile.type,
+        tier: newProfile.tier,
+      });
+    } catch (error) {
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
+  } else {
+    return res.status(403).send("Invalid profile id");
+  }
+});
+
+// DELETE-Request zum Entfernen eines Unterprofils
+app.delete("/account/delete-profile", authenticateJWT, async (req, res) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  const deletedProfileId = req.body.id;
+  if (mongoose.Types.ObjectId.isValid(id) && mongoose.Types.ObjectId.isValid(deletedProfileId)) {
+    try {
+      await Account.deleteOne({ _id: deletedProfileId });
+      await Account.updateOne(
+        { id },
+        {
+          $pull: { related_accounts: { _id: deletedProfileId } },
+        }
+      );
+      return res.status(200).send("Profile deleted");
+    } catch (error) {
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
+  } else {
+    return res.status(403).send("Invalid profile id");
+  }
+});
+
+// POST-Request zum Wechseln des Profils
+app.post("/account/change-profile", authenticateJWT, async (req, res) => {
+  const id = req.body.id;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    try {
+      await Account.findOne({ _id: id }).then((account) => {
+        if (account) {
+          const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
+          return res.send({
+            token: accessToken,
+            id: account.id,
+            type: account.type,
+            tier: account.tier,
+          });
+        } else {
+          return res.status(404).send("Profile not found");
+        }
+      });
+    } catch (error) {
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
+  } else {
+    return res.status(403).send("Invalid profile id");
+  }
+});
+
+// POST-Request zum Erstellen einer Aktivität
 app.post("/activity/", async (req, res) => {
-  const newActivity = new Activity({ ...req.body });
-  const insertedActivity = await newActivity.save().catch((err) => err);
-  return res.status(201).json(insertedActivity);
+  try {
+    const newActivity = new Activity({ ...req.body });
+    await newActivity.save();
+    return res.status(201).send(newActivity);
+  } catch (error) {
+    // @ts-ignore
+    return res.status(400).send(error.message);
+  }
 });
-app.get("/activity/", (req, res) => {
-  Activity.find().then((list) => {
-    if (list) {
-      return res.send(list);
-    } else {
-      return res.status(404).end();
-    }
-  });
+
+// GET-Request zum Abrufen aller Aktivitäten
+app.get("/activity/", async (req, res) => {
+  try {
+    const activityList = await Activity.find();
+    return res.send(activityList);
+  } catch (error) {
+    // @ts-ignore
+    return res.status(400).send(error.message);
+  }
 });
-app.get("/activity/:activityId", (req, res) => {
+
+// GET-Request zum Abrufen einer spezifischen Aktivität
+app.get("/activity/:activityId", async (req, res) => {
   const id = req.params.activityId;
-  Activity.findOne({ _id: id }).then((activity) => {
-    if (activity) {
-      res.send(activity);
-    } else {
-      return res.status(404).end();
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    try {
+      const requestedActivity = await Activity.findOne({ _id: id });
+      res.send(requestedActivity);
+    } catch (error) {
+      // @ts-ignore
+      return res.status(400).send(error.message);
     }
-  });
+  } else {
+    return res.status(403).send("Invalid activity id");
+  }
 });
-app.put("/activity/:activityId", async (req, res) => {
+
+// PATCH-Request zum Aktualisieren einer Aktivität
+app.patch("/activity/:activityId", async (req, res) => {
   const updatedActivity = req.body;
   const id = req.params.activityId;
-  await Activity.updateOne({ _id: id }, updatedActivity).then((activity) => {
-    if (activity) {
-      res.send(activity);
-    } else {
-      res.status(404).end();
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    try {
+      await Activity.updateOne({ _id: id }, updatedActivity, { runValidators: true });
+      return res.send("Activity successfully updated");
+    } catch (error) {
+      // @ts-ignore
+      return res.status(400).send(error.message);
     }
-  });
+  } else {
+    return res.status(403).send("Invalid activity id");
+  }
 });
+
+// GET-Request von Aktivitäten anhand von Suchbegriff
 app.get("/search/:query", async (req, res) => {
   const searchQuery: string = req.params.query.toLowerCase();
-  const activitiesList: ActivityType[] = await Activity.find();
-  res.send(searchActivities(searchQuery, activitiesList));
+  try {
+    const activitiesList: ActivityType[] = await Activity.find();
+    res.send(searchActivities(searchQuery, activitiesList));
+  } catch (error) {
+    // @ts-ignore
+    return res.status(400).send(error.message);
+  }
 });
