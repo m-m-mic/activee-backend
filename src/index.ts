@@ -48,6 +48,7 @@ app.post("/account/register", async (req, res) => {
       tier: newAccount.tier,
     });
   } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return res.status(400).send(error.message);
   }
@@ -73,6 +74,7 @@ app.post("/account/login", async (req, res) => {
       });
     });
   } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return res.status(400).send(error.message);
   }
@@ -87,6 +89,7 @@ app.get("/account/info", authenticateJWT, async (req: Request, res: Response) =>
       const requestedAccount = await Account.findOne({ _id: id });
       return res.send(requestedAccount);
     } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       return res.status(400).send(error.message);
     }
@@ -105,6 +108,7 @@ app.patch("/account/info", authenticateJWT, async (req: Request, res: Response) 
       await Account.updateOne({ _id: id }, updatedValues, { runValidators: true });
       return res.send("User successfully updated");
     } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       return res.status(400).send(error.message);
     }
@@ -123,6 +127,7 @@ app.get("/account/profile-list", authenticateJWT, async (req: Request, res: Resp
       const profileList = await getAccountListById(id, accounts);
       res.send(profileList);
     } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       return res.status(400).send(error.message);
     }
@@ -160,6 +165,7 @@ app.post("/account/create-profile", authenticateJWT, async (req, res) => {
         tier: newProfile.tier,
       });
     } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       return res.status(400).send(error.message);
     }
@@ -184,6 +190,7 @@ app.delete("/account/delete-profile", authenticateJWT, async (req, res) => {
       );
       return res.status(200).send("Profile deleted");
     } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       return res.status(400).send(error.message);
     }
@@ -211,6 +218,7 @@ app.post("/account/change-profile", authenticateJWT, async (req, res) => {
         }
       });
     } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       return res.status(400).send(error.message);
     }
@@ -226,6 +234,7 @@ app.post("/activity/", async (req, res) => {
     await newActivity.save();
     return res.status(201).send(newActivity);
   } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return res.status(400).send(error.message);
   }
@@ -237,6 +246,7 @@ app.get("/activity/", async (req, res) => {
     const activityList = await Activity.find();
     return res.send(activityList);
   } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return res.status(400).send(error.message);
   }
@@ -250,6 +260,7 @@ app.get("/activity/:activityId", async (req, res) => {
       const requestedActivity = await Activity.findOne({ _id: id });
       res.send(requestedActivity);
     } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       return res.status(400).send(error.message);
     }
@@ -267,6 +278,7 @@ app.patch("/activity/:activityId", async (req, res) => {
       await Activity.updateOne({ _id: id }, updatedActivity, { runValidators: true });
       return res.send("Activity successfully updated");
     } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       return res.status(400).send(error.message);
     }
@@ -282,6 +294,7 @@ app.get("/search/:query", async (req, res) => {
     const activitiesList: ActivityType[] = await Activity.find();
     res.send(searchActivities(searchQuery, activitiesList));
   } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return res.status(400).send(error.message);
   }
