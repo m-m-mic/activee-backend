@@ -2,12 +2,13 @@ import express from "express";
 import { Activity } from "../models/activities";
 import mongoose from "mongoose";
 import { ActivityType } from "../interfaces";
-import { searchActivities } from "../scripts/activitiesScripts";
+import { getUserActivities, searchActivities } from "../scripts/activitiesScripts";
+import { authenticatedRequest, authenticateJWT } from "../middleware/authenticateJWT";
 
 export const activityRoutes = express.Router();
 
 // POST-Request zum Erstellen einer Aktivität
-activityRoutes.post("/activity/", async (req, res) => {
+activityRoutes.post("/activity/", authenticateJWT, async (req, res) => {
   try {
     const newActivity = new Activity({ ...req.body });
     await newActivity.save();
@@ -20,10 +21,18 @@ activityRoutes.post("/activity/", async (req, res) => {
 });
 
 // GET-Request zum Abrufen aller Aktivitäten
-activityRoutes.get("/activity/", async (req, res) => {
+activityRoutes.get("/activity/", authenticateJWT, async (req, res) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  const type = authReq.account.type;
   try {
-    const activityList = await Activity.find();
-    return res.send(activityList);
+    const activities: ActivityType[] = await Activity.find();
+    const userActivities = await getUserActivities(id, type, activities);
+    if (userActivities) {
+      return res.send(userActivities);
+    } else {
+      return res.status(401).send("Invalid account type");
+    }
   } catch (error) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -32,7 +41,7 @@ activityRoutes.get("/activity/", async (req, res) => {
 });
 
 // GET-Request zum Abrufen einer spezifischen Aktivität
-activityRoutes.get("/activity/:activityId", async (req, res) => {
+activityRoutes.get("/activity/:activityId", authenticateJWT, async (req, res) => {
   const id = req.params.activityId;
   if (mongoose.Types.ObjectId.isValid(id)) {
     try {
@@ -52,7 +61,7 @@ activityRoutes.get("/activity/:activityId", async (req, res) => {
 });
 
 // PATCH-Request zum Aktualisieren einer Aktivität
-activityRoutes.patch("/activity/:activityId", async (req, res) => {
+activityRoutes.patch("/activity/:activityId", authenticateJWT, async (req, res) => {
   const updatedActivity = req.body;
   const id = req.params.activityId;
   if (mongoose.Types.ObjectId.isValid(id)) {
@@ -62,6 +71,25 @@ activityRoutes.patch("/activity/:activityId", async (req, res) => {
         return res.status(404).send("Activity not found");
       }
       return res.send(updated);
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
+  } else {
+    return res.status(403).send("Invalid activity id");
+  }
+});
+
+activityRoutes.delete("/activity/:activityId", authenticateJWT, async (req, res) => {
+  const id = req.params.activityId;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    try {
+      const deleted = await Activity.findOneAndDelete({ _id: id });
+      if (!deleted) {
+        return res.status(404).send("Activity not found");
+      }
+      return res.send(`Successfully deleted activity ${deleted._id}`);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore

@@ -54,13 +54,13 @@ accountRoutes.post("/account/login", async (req, res) => {
   }
 });
 
-// GET-Request für Informationen über den eigenen Account
+// GET-Request für alle Informationen des eigenen Accounts
 accountRoutes.get("/account/info", authenticateJWT, async (req: Request, res: Response) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
   if (mongoose.Types.ObjectId.isValid(id)) {
     try {
-      const requestedAccount = await Account.findOne({ _id: id });
+      const requestedAccount = await Account.findOne({ _id: id }, { _id: false, password: false, type: false, tier: false });
       if (!requestedAccount) {
         res.status(404).send("Account not found");
       }
@@ -82,7 +82,10 @@ accountRoutes.patch("/account/info", authenticateJWT, async (req: Request, res: 
   const updatedValues = req.body;
   if (mongoose.Types.ObjectId.isValid(id)) {
     try {
-      const updated = await Account.findOneAndUpdate({ _id: id }, updatedValues, { new: true, runValidators: true });
+      const updated = await Account.findOneAndUpdate({ _id: id }, updatedValues, {
+        new: true,
+        runValidators: true,
+      });
       if (!updated) {
         return res.status(404).send("Account not found");
       }
