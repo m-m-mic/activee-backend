@@ -34,7 +34,7 @@ const connectAndStartBackend = async () => {
 connectAndStartBackend();
 
 // Health Check für Render.com deployment
-app.use("/", (req, res) => {
+app.use("/health-check", (req, res) => {
   res.status(200).send("activee api running.");
 });
 // ROUTES Importe für die verschiedene Collections
