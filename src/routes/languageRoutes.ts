@@ -16,6 +16,7 @@ languageRoutes.post("/language/", async (req, res) => {
   }
 });
 
+// GET-Request zum Aufrufen aller verfügbaren Sprachen
 languageRoutes.get("/language/", async (req, res) => {
   try {
     const languages = await Language.find();

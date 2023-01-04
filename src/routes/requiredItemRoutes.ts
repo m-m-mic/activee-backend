@@ -16,6 +16,7 @@ requiredItemRoutes.post("/required-item/", async (req, res) => {
   }
 });
 
+// GET-Request zum Aufrufen aller verfügbaren notwendigen Gegenständen
 requiredItemRoutes.get("/required-item/", async (req, res) => {
   try {
     const requiredItems = await RequiredItem.find();

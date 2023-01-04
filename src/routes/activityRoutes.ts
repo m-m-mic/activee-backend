@@ -2,7 +2,7 @@ import express from "express";
 import { Activity } from "../models/activities";
 import mongoose from "mongoose";
 import { ActivityType } from "../interfaces";
-import { getUserActivities, searchActivities } from "../scripts/activitiesScripts";
+import { searchActivities } from "../scripts/activitiesScripts";
 import { authenticatedRequest, authenticateJWT } from "../middleware/authenticateJWT";
 import { Account } from "../models/accounts";
 
@@ -13,8 +13,10 @@ activityRoutes.post("/activity/", authenticateJWT, async (req, res) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
   try {
+    // Neue Aktivität wird erstellt und gespeichert
     const newActivity = await new Activity({ ...req.body });
     await newActivity.save();
+    // Daten der neuen Aktivität werden in die activities Liste des Übungsleiters geschrieben
     await Account.findOneAndUpdate(
       { _id: id },
       {
@@ -27,6 +29,7 @@ activityRoutes.post("/activity/", authenticateJWT, async (req, res) => {
         },
       }
     );
+    // Neue Aktivität wird zurückgegeben
     return res.status(201).send(newActivity);
   } catch (error) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -41,8 +44,14 @@ activityRoutes.get("/activity/", authenticateJWT, async (req, res) => {
   const id = authReq.account.id;
   const type = authReq.account.type;
   try {
-    const activities: ActivityType[] = await Activity.find();
-    const userActivities = await getUserActivities(id, type, activities);
+    let userActivities;
+    if (type === "participant") {
+      // Liste aller Aktivitäten, welche die Nutzer id in der Liste "participants" beinhalten, werden zurückgegeben
+      userActivities = await Activity.find({ "participants._id": id });
+    } else if (type === "organisation") {
+      // Liste aller Aktivitäten, welche die Nutzer id in der Liste "trainers" beinhalten, werden zurückgegeben
+      userActivities = await Activity.find({ "trainers._id": id });
+    }
     if (userActivities) {
       return res.send(userActivities);
     } else {
@@ -85,6 +94,8 @@ activityRoutes.patch("/activity/:activityId", authenticateJWT, async (req, res) 
       if (!updated) {
         return res.status(404).send("Activity not found");
       }
+      // Name der Aktivität wird in der "activities" Liste aller verbundenen Teilnehmer und Übungsleiter aktualisiert
+      await Account.updateMany({ "activities._id": id }, { $set: { "activities.$.name": updated.name } });
       return res.send(updated);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -96,14 +107,19 @@ activityRoutes.patch("/activity/:activityId", authenticateJWT, async (req, res) 
   }
 });
 
+// DELETE-Request zum Löschen einer Aktivität
 activityRoutes.delete("/activity/:activityId", authenticateJWT, async (req, res) => {
-  const id = req.params.activityId;
-  if (mongoose.Types.ObjectId.isValid(id)) {
+  const authReq = req as unknown as authenticatedRequest;
+  const id = authReq.account.id;
+  const activityId = authReq.params.activityId;
+  if (mongoose.Types.ObjectId.isValid(activityId)) {
     try {
-      const deleted = await Activity.findOneAndDelete({ _id: id });
+      const deleted = await Activity.findOneAndDelete({ _id: activityId });
       if (!deleted) {
         return res.status(404).send("Activity not found");
       }
+      // Aktivität wird aus der "activities" Liste aller verbundenen Teilnehmer und Übungsleiter entfernt
+      await Account.updateMany({ "activities._id": id }, { $pull: { activities: { _id: activityId } } });
       return res.send(`Successfully deleted activity ${deleted._id}`);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment

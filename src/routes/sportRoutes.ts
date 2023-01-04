@@ -16,6 +16,7 @@ sportRoutes.post("/sport/", async (req, res) => {
   }
 });
 
+// GET-Request zum Aufrufen aller verfügbaren Sportarten
 sportRoutes.get("/sport/", async (req, res) => {
   try {
     const sports = await Sport.find();

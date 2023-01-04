@@ -6,14 +6,17 @@ import jwt from "jsonwebtoken";
 import { AccountType } from "../interfaces";
 import { getAccountListById } from "../scripts/accountScripts";
 import { secretToken } from "../index";
+import { Activity } from "../models/activities";
 
 export const accountRoutes = express.Router();
 
 // POST-Request für Registrierung/Neuerstellung eines Accounts
 accountRoutes.post("/account/register", async (req, res) => {
   try {
+    // Neuer Account wird erstellt und gespeichert
     const newAccount = new Account({ ...req.body });
     await newAccount.save();
+    // Access-Token wird generiert und an Frontend zurückgegeben
     const accessToken = jwt.sign({ id: newAccount.id, type: newAccount.type }, secretToken);
     return res.status(201).send({
       token: accessToken,
@@ -32,6 +35,7 @@ accountRoutes.post("/account/register", async (req, res) => {
 accountRoutes.post("/account/login", async (req, res) => {
   const credentials = req.body;
   try {
+    // Account mit passender Email wird gesucht
     Account.findOne({ email: credentials.email }).then((account) => {
       if (!account) {
         return res.status(404).end();
@@ -39,6 +43,7 @@ accountRoutes.post("/account/login", async (req, res) => {
       if (account.password != credentials.password) {
         return res.status(403).end();
       }
+      // Access-Token wird generiert und an Frontend zurückgegeben
       const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
       return res.send({
         token: accessToken,
@@ -60,6 +65,7 @@ accountRoutes.get("/account/info", authenticateJWT, async (req: Request, res: Re
   const id = authReq.account.id;
   if (mongoose.Types.ObjectId.isValid(id)) {
     try {
+      // Accountdaten des Nutzers werden in der Collection gesucht. id, password, type und tier werden nicht mitgegeben
       const requestedAccount = await Account.findOne({ _id: id }, { _id: false, password: false, type: false, tier: false });
       if (!requestedAccount) {
         res.status(404).send("Account not found");
@@ -89,6 +95,32 @@ accountRoutes.patch("/account/info", authenticateJWT, async (req: Request, res: 
       if (!updated) {
         return res.status(404).send("Account not found");
       }
+      // Informationen des Nutzers werden in der "related_accounts" Liste von anderen Profilen, in der "trainers" und
+      // der "participants" Liste der Aktivitäten aktualisiert
+      await Account.updateMany(
+        { "related_accounts._id": id },
+        { $set: { "related_accounts.$.first_name": updated.first_name, "related_accounts.$.last_name": updated.last_name } }
+      );
+      await Activity.updateMany(
+        { "trainers._id": id },
+        {
+          $set: {
+            "trainers.$.first_name": updated.first_name,
+            "trainers.$.last_name": updated.last_name,
+            "trainers.$.phone_number": updated.phone_number,
+          },
+        }
+      );
+      await Activity.updateMany(
+        { "participants._id": id },
+        {
+          $set: {
+            "participants.$.first_name": updated.first_name,
+            "participants.$.last_name": updated.last_name,
+            "participants.$.birthday": updated.birthday,
+          },
+        }
+      );
       return res.send(updated);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -126,8 +158,10 @@ accountRoutes.post("/account/create-profile", authenticateJWT, async (req, res) 
   const addedProfile = req.body;
   if (mongoose.Types.ObjectId.isValid(id)) {
     try {
+      // Neues Profil wird erstellt
       const newProfile = new Account({ ...addedProfile });
       await newProfile.save();
+      // Informationen des neuen Profils werden in die "related_accounts" Liste des Hauptprofils geschrieben
       await Account.updateOne(
         { id },
         {
@@ -140,6 +174,7 @@ accountRoutes.post("/account/create-profile", authenticateJWT, async (req, res) 
           },
         }
       );
+      // Neuer Token für das Profil wird generiert und ans Frontend zurückgegeben
       const accessToken = await jwt.sign({ id: newProfile.id, type: newProfile.type }, secretToken);
       return res.send({
         token: accessToken,
@@ -168,6 +203,7 @@ accountRoutes.delete("/account/delete-profile", authenticateJWT, async (req, res
       if (!deleted) {
         return res.status(404).send("Profile not found");
       }
+      // Profil wird in der "related_accounts" Liste des Hauptprofils gelöscht
       await Account.updateOne(
         { id },
         {
@@ -192,6 +228,7 @@ accountRoutes.post("/account/change-profile", authenticateJWT, async (req, res) 
     try {
       await Account.findOne({ _id: id }).then((account) => {
         if (account) {
+          // Neuer Token wird generiert und ans Frontend zurückgegeben
           const accessToken = jwt.sign({ id: account.id, type: account.type }, secretToken);
           return res.send({
             token: accessToken,
