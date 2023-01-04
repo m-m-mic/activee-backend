@@ -4,14 +4,29 @@ import mongoose from "mongoose";
 import { ActivityType } from "../interfaces";
 import { getUserActivities, searchActivities } from "../scripts/activitiesScripts";
 import { authenticatedRequest, authenticateJWT } from "../middleware/authenticateJWT";
+import { Account } from "../models/accounts";
 
 export const activityRoutes = express.Router();
 
 // POST-Request zum Erstellen einer Aktivität
 activityRoutes.post("/activity/", authenticateJWT, async (req, res) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
   try {
-    const newActivity = new Activity({ ...req.body });
+    const newActivity = await new Activity({ ...req.body });
     await newActivity.save();
+    await Account.findOneAndUpdate(
+      { _id: id },
+      {
+        $addToSet: {
+          activities: {
+            _id: newActivity.id,
+            name: newActivity.name,
+            sport: newActivity.sport,
+          },
+        },
+      }
+    );
     return res.status(201).send(newActivity);
   } catch (error) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
