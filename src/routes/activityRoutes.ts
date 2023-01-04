@@ -109,9 +109,7 @@ activityRoutes.patch("/activity/:activityId", authenticateJWT, async (req, res) 
 
 // DELETE-Request zum Löschen einer Aktivität
 activityRoutes.delete("/activity/:activityId", authenticateJWT, async (req, res) => {
-  const authReq = req as unknown as authenticatedRequest;
-  const id = authReq.account.id;
-  const activityId = authReq.params.activityId;
+  const activityId = req.params.activityId;
   if (mongoose.Types.ObjectId.isValid(activityId)) {
     try {
       const deleted = await Activity.findOneAndDelete({ _id: activityId });
@@ -119,7 +117,7 @@ activityRoutes.delete("/activity/:activityId", authenticateJWT, async (req, res)
         return res.status(404).send("Activity not found");
       }
       // Aktivität wird aus der "activities" Liste aller verbundenen Teilnehmer und Übungsleiter entfernt
-      await Account.updateMany({ "activities._id": id }, { $pull: { activities: { _id: activityId } } });
+      await Account.updateMany({ "activities._id": activityId }, { $pull: { activities: { _id: activityId } } });
       return res.send(`Successfully deleted activity ${deleted._id}`);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
