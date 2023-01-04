@@ -35,7 +35,7 @@ const ActivitySchema = new mongoose.Schema({
   additional_info: String,
   membership_fee: String,
   dates: {
-    type: [{ day: String, starting_time: String, ending_time: String }],
+    type: [{ day: { value: String, label: String }, starting_time: String, ending_time: String }],
     _id: false,
     required: true,
   },
