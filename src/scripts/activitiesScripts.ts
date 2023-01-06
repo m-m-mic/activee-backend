@@ -16,3 +16,91 @@ export function searchActivities(searchQuery: string, activities: ActivityType[]
   // Funktion gibt Liste mit allen Suchergebnissen zurück
   return searchResult;
 }
+
+// Mit der Funktion wird anhand von den Angaben des Nutzers im Profil ein Modell erstellt, mit welchen alle Aktivitäten
+// durchsucht und gefiltert werden können.
+// Wenn der Nutzer Angaben getätigt hat, müssen die Angaben der Aktivität mit diesen übereinstimmen
+export function constructPreferenceModel(account) {
+  let model = {};
+  if (account.genders.length > 0) {
+    model = { ...model, "gender._id": { $in: account.genders } };
+  }
+  if (account.sports.length > 0) {
+    const sportIds: string[] = [];
+    for (const sport of account.sports) {
+      sportIds.push(sport._id);
+    }
+    model = { ...model, "sport._id": { $in: sportIds } };
+  }
+  if (account.languages.length > 0) {
+    const languageIds: string[] = [];
+    for (const language of account.languages) {
+      languageIds.push(language._id);
+    }
+    model = { ...model, "languages._id": { $in: languageIds } };
+  }
+  if (account.birthday) {
+    const age = getAge(account.birthday);
+    console.log(age);
+    model = {
+      ...model,
+      $or: [
+        { "age.age": { $lte: age }, "age.isOlderThan": true },
+        { "age.age": { $gte: age }, "age.isOlderThan": false },
+      ],
+    };
+  }
+  return model;
+}
+
+// Identisch zu constructPreferenceModel, nur werden alle Aktivitäten, welche NICHT den Nutzerpräferenzen entsprechen
+// akzeptiert (bis auf Alter). Wird für "Weitere Ergebnisse" auf der Suchseite benötigt
+export function constructOppositePreferenceModel(account) {
+  let model = {};
+  if (account.genders.length > 0) {
+    model = { ...model, "gender._id": { $nin: account.genders } };
+  }
+  if (account.sports.length > 0) {
+    const sportIds: string[] = [];
+    for (const sport of account.sports) {
+      sportIds.push(sport._id);
+    }
+    model = { ...model, "sport._id": { $nin: sportIds } };
+  }
+  if (account.languages.length > 0) {
+    const languageIds: string[] = [];
+    for (const language of account.languages) {
+      languageIds.push(language._id);
+    }
+    model = { ...model, "languages._id": { $nin: languageIds } };
+  }
+  if (account.birthday) {
+    const age = getAge(account.birthday);
+    console.log(age);
+    model = {
+      ...model,
+      $or: [
+        { "age.age": { $lte: age }, "age.isOlderThan": true },
+        { "age.age": { $gte: age }, "age.isOlderThan": false },
+      ],
+    };
+  }
+  return model;
+}
+
+// Berechnet das Alter des Nutzers anhand vom Geburtsdatum
+function getAge(birthday) {
+  const currentDate = new Date();
+  const birthDate = new Date(birthday);
+  let age = currentDate.getFullYear() - birthDate.getFullYear();
+  const month = currentDate.getMonth() - birthDate.getMonth();
+  if (month < 0 || (month === 0 && currentDate.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+// Sortiert zufällig eine Liste
+export function shuffleArray(array) {
+  return array.sort(() => Math.random() - 0.5);
+}

@@ -2,7 +2,12 @@ import express from "express";
 import { Activity } from "../models/activities";
 import mongoose from "mongoose";
 import { ActivityType } from "../interfaces";
-import { searchActivities } from "../scripts/activitiesScripts";
+import {
+  constructOppositePreferenceModel,
+  constructPreferenceModel,
+  searchActivities,
+  shuffleArray,
+} from "../scripts/activitiesScripts";
 import { authenticatedRequest, authenticateJWT } from "../middleware/authenticateJWT";
 import { Account } from "../models/accounts";
 
@@ -38,7 +43,7 @@ activityRoutes.post("/activity/", authenticateJWT, async (req, res) => {
   }
 });
 
-// GET-Request zum Abrufen aller Aktivitäten
+// GET-Request zum Abrufen aller Aktivitäten, die mit dem Nutzer zusammenhängen
 activityRoutes.get("/activity/", authenticateJWT, async (req, res) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
@@ -57,6 +62,23 @@ activityRoutes.get("/activity/", authenticateJWT, async (req, res) => {
     } else {
       return res.status(401).send("Invalid account type");
     }
+  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return res.status(400).send(error.message);
+  }
+});
+
+// GET-Request zum Abrufen aller Empfehlungen für einen Nutzer
+activityRoutes.get("/activity/filtered", authenticateJWT, async (req, res) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  try {
+    const account = await Account.findOne({ _id: id });
+    const model = constructPreferenceModel(account);
+    console.log(model);
+    const activities = await Activity.find(model);
+    res.send(shuffleArray(activities));
   } catch (error) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -130,11 +152,18 @@ activityRoutes.delete("/activity/:activityId", authenticateJWT, async (req, res)
 });
 
 // GET-Request von Aktivitäten anhand von Suchbegriff
-activityRoutes.get("/search/:query", async (req, res) => {
-  const searchQuery: string = req.params.query.toLowerCase();
+activityRoutes.get("/search/:query", authenticateJWT, async (req, res) => {
+  const authReq = req as unknown as authenticatedRequest;
+  const id = authReq.account.id;
+  const searchQuery: string = authReq.params.query.toLowerCase();
   try {
-    const activitiesList: ActivityType[] = await Activity.find();
-    res.send(searchActivities(searchQuery, activitiesList));
+    const account = await Account.findOne({ _id: id });
+    const filteredActivitiesList: ActivityType[] = await Activity.find(constructPreferenceModel(account));
+    const otherActivitiesList: ActivityType[] = await Activity.find(constructOppositePreferenceModel(account));
+    res.send({
+      filtered: searchActivities(searchQuery, filteredActivitiesList),
+      other: searchActivities(searchQuery, otherActivitiesList),
+    });
   } catch (error) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore

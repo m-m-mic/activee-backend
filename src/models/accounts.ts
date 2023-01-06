@@ -11,8 +11,8 @@ const AccountSchema = new mongoose.Schema({
   },
   first_name: { type: String, trim: true, required: true },
   last_name: { type: String, trim: true, required: true },
-  club: String,
-  phone_number: String,
+  club: { type: String, trim: true },
+  phone_number: { type: String, trim: true },
   birthday: String,
   address: {
     type: {
