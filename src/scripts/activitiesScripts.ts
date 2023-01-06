@@ -74,7 +74,7 @@ export function constructOppositePreferenceModel(account) {
     }
     model = { ...model, "languages._id": { $nin: languageIds } };
   }
-  if (account.birthday) {
+  /*  if (account.birthday) {
     const age = getAge(account.birthday);
     console.log(age);
     model = {
@@ -84,7 +84,7 @@ export function constructOppositePreferenceModel(account) {
         { "age.age": { $gte: age }, "age.isOlderThan": false },
       ],
     };
-  }
+  }*/
   return model;
 }
 
