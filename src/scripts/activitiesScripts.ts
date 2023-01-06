@@ -41,7 +41,6 @@ export function constructPreferenceModel(account) {
   }
   if (account.birthday) {
     const age = getAge(account.birthday);
-    console.log(age);
     model = {
       ...model,
       $or: [
@@ -50,42 +49,20 @@ export function constructPreferenceModel(account) {
       ],
     };
   }
+  console.log(model);
   return model;
 }
 
-// Identisch zu constructPreferenceModel, nur werden alle Aktivitäten, welche NICHT den Nutzerpräferenzen entsprechen
-// akzeptiert (bis auf Alter). Wird für "Weitere Ergebnisse" auf der Suchseite benötigt
-export function constructOppositePreferenceModel(account) {
-  let model = {};
-  if (account.genders.length > 0) {
-    model = { ...model, "gender._id": { $nin: account.genders } };
-  }
-  if (account.sports.length > 0) {
-    const sportIds: string[] = [];
-    for (const sport of account.sports) {
-      sportIds.push(sport._id);
+export function deleteDuplicateEntries(filteredList, completeList) {
+  const cleanedList = completeList;
+  for (const activity of filteredList) {
+    for (let i = 0; i < cleanedList.length; i++) {
+      if (cleanedList[i]._id.toString() === activity._id.toString()) {
+        cleanedList.splice(i, 1);
+      }
     }
-    model = { ...model, "sport._id": { $nin: sportIds } };
   }
-  if (account.languages.length > 0) {
-    const languageIds: string[] = [];
-    for (const language of account.languages) {
-      languageIds.push(language._id);
-    }
-    model = { ...model, "languages._id": { $nin: languageIds } };
-  }
-  /*  if (account.birthday) {
-    const age = getAge(account.birthday);
-    console.log(age);
-    model = {
-      ...model,
-      $or: [
-        { "age.age": { $lte: age }, "age.isOlderThan": true },
-        { "age.age": { $gte: age }, "age.isOlderThan": false },
-      ],
-    };
-  }*/
-  return model;
+  return cleanedList;
 }
 
 // Berechnet das Alter des Nutzers anhand vom Geburtsdatum

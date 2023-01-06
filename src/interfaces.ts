@@ -23,6 +23,7 @@ export interface AccountType {
 
 // TypeScript Interface mit allen Typen für values in einer Aktivität
 export interface ActivityType {
+  _id: string;
   name: string;
   club: string;
   sport: PreselectOption;

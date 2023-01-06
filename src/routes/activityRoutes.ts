@@ -2,12 +2,7 @@ import express from "express";
 import { Activity } from "../models/activities";
 import mongoose from "mongoose";
 import { ActivityType } from "../interfaces";
-import {
-  constructOppositePreferenceModel,
-  constructPreferenceModel,
-  searchActivities,
-  shuffleArray,
-} from "../scripts/activitiesScripts";
+import { constructPreferenceModel, deleteDuplicateEntries, searchActivities, shuffleArray } from "../scripts/activitiesScripts";
 import { authenticatedRequest, authenticateJWT } from "../middleware/authenticateJWT";
 import { Account } from "../models/accounts";
 
@@ -159,10 +154,11 @@ activityRoutes.get("/search/:query", authenticateJWT, async (req, res) => {
   try {
     const account = await Account.findOne({ _id: id });
     const filteredActivitiesList: ActivityType[] = await Activity.find(constructPreferenceModel(account));
-    const otherActivitiesList: ActivityType[] = await Activity.find(constructOppositePreferenceModel(account));
+    const completeActivitiesList: ActivityType[] = await Activity.find();
+    const cleanedActivitiesList = await deleteDuplicateEntries(filteredActivitiesList, completeActivitiesList);
     res.send({
       filtered: searchActivities(searchQuery, filteredActivitiesList),
-      other: searchActivities(searchQuery, otherActivitiesList),
+      other: searchActivities(searchQuery, cleanedActivitiesList),
     });
   } catch (error) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
