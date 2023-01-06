@@ -162,8 +162,8 @@ accountRoutes.post("/account/create-profile", authenticateJWT, async (req, res) 
       const newProfile = new Account({ ...addedProfile });
       await newProfile.save();
       // Informationen des neuen Profils werden in die "related_accounts" Liste des Hauptprofils geschrieben
-      await Account.updateOne(
-        { id },
+      await Account.findOneAndUpdate(
+        { _id: id },
         {
           $addToSet: {
             related_accounts: {
@@ -172,7 +172,8 @@ accountRoutes.post("/account/create-profile", authenticateJWT, async (req, res) 
               last_name: newProfile.last_name,
             },
           },
-        }
+        },
+        { new: true, runValidators: true }
       );
       // Neuer Token für das Profil wird generiert und ans Frontend zurückgegeben
       const accessToken = await jwt.sign({ id: newProfile.id, type: newProfile.type }, secretToken);
@@ -205,7 +206,7 @@ accountRoutes.delete("/account/delete-profile", authenticateJWT, async (req, res
       }
       // Profil wird in der "related_accounts" Liste des Hauptprofils gelöscht
       await Account.updateOne(
-        { id },
+        { _id: id },
         {
           $pull: { related_accounts: { _id: deletedProfileId } },
         }
