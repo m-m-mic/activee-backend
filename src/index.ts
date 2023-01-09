@@ -1,6 +1,6 @@
 import cors from "cors";
 import express from "express";
-import mongoose from "mongoose";
+import mongoose, { mongo } from "mongoose";
 import dotenv from "dotenv";
 import { activityRoutes } from "./routes/activityRoutes";
 import { accountRoutes } from "./routes/accountRoutes";
@@ -11,7 +11,11 @@ import { sportRoutes } from "./routes/sportRoutes";
 const app = express();
 const port = 3033;
 dotenv.config();
+
+// SecretToken wird verwendet, um JsonWebToken zu generieren
 export const secretToken = process.env.SECRET_TOKEN;
+// URL zur Datenbank
+const mongoDbUrl = process.env.MONGODB_URL;
 
 app.use(cors());
 app.use(express.json());
@@ -20,7 +24,8 @@ mongoose.set("strictQuery", true);
 
 const connectAndStartBackend = async () => {
   try {
-    await mongoose.connect("mongodb+srv://admin:CYbHBuTWEG4mOlhR@activee.l1w6o4b.mongodb.net/activee-db");
+    // @ts-ignore
+    await mongoose.connect(mongoDbUrl);
     console.log("Connection to mongoDB successful");
     app.listen(port, () => {
       console.log(`activee backend listening on port ${port}`);
