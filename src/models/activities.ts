@@ -63,15 +63,7 @@ const ActivitySchema = new mongoose.Schema({
     ],
     required: true,
   },
-  participants: [
-    {
-      _id: String,
-      first_name: String,
-      last_name: String,
-      email: String,
-      birthday: String,
-    },
-  ],
+  participants: [{ type: mongoose.Schema.Types.ObjectId, ref: "Account" }],
 });
 
 export const Activity = mongoose.model("Activity", ActivitySchema);

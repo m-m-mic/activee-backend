@@ -32,8 +32,8 @@ const AccountSchema = new mongoose.Schema({
     type: [{ day: String, starting_hour: String }],
     _id: false,
   },
-  related_accounts: [{ _id: String, first_name: String, last_name: String }],
-  activities: [{ _id: String, name: String, sport: { _id: String, name: String } }],
+  related_accounts: [{ type: mongoose.Schema.Types.ObjectId, ref: "Account" }],
+  activities: [{ type: mongoose.Schema.Types.ObjectId, ref: "Activity" }],
 });
 
 export const Account = mongoose.model("Account", AccountSchema);
