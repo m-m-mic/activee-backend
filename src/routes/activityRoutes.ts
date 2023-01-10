@@ -21,42 +21,12 @@ activityRoutes.post("/activity/", authenticateJWT, async (req, res) => {
       { _id: id },
       {
         $addToSet: {
-          activities: {
-            _id: newActivity.id,
-            name: newActivity.name,
-            sport: newActivity.sport,
-          },
+          activities: newActivity._id,
         },
       }
     );
     // Neue Aktivität wird zurückgegeben
     return res.status(201).send(newActivity);
-  } catch (error) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    return res.status(400).send(error.message);
-  }
-});
-
-// GET-Request zum Abrufen aller Aktivitäten, die mit dem Nutzer zusammenhängen
-activityRoutes.get("/activity/", authenticateJWT, async (req, res) => {
-  const authReq = req as authenticatedRequest;
-  const id = authReq.account.id;
-  const type = authReq.account.type;
-  try {
-    let userActivities;
-    if (type === "participant") {
-      // Liste aller Aktivitäten, welche die Nutzer id in der Liste "participants" beinhalten, werden zurückgegeben
-      userActivities = await Activity.find({ "participants._id": id });
-    } else if (type === "organisation") {
-      // Liste aller Aktivitäten, welche die Nutzer id in der Liste "trainers" beinhalten, werden zurückgegeben
-      userActivities = await Activity.find({ "trainers._id": id });
-    }
-    if (userActivities) {
-      return res.send(userActivities);
-    } else {
-      return res.status(401).send("Invalid account type");
-    }
   } catch (error) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -71,7 +41,6 @@ activityRoutes.get("/activity/filtered", authenticateJWT, async (req, res) => {
   try {
     const account = await Account.findOne({ _id: id });
     const model = constructPreferenceModel(account);
-    console.log(model);
     const activities = await Activity.find(model);
     res.send(shuffleArray(activities));
   } catch (error) {
@@ -111,8 +80,6 @@ activityRoutes.patch("/activity/:activityId", authenticateJWT, async (req, res) 
       if (!updated) {
         return res.status(404).send("Activity not found");
       }
-      // Name der Aktivität wird in der "activities" Liste aller verbundenen Teilnehmer und Übungsleiter aktualisiert
-      await Account.updateMany({ "activities._id": id }, { $set: { "activities.$.name": updated.name } });
       return res.send(updated);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -133,8 +100,6 @@ activityRoutes.delete("/activity/:activityId", authenticateJWT, async (req, res)
       if (!deleted) {
         return res.status(404).send("Activity not found");
       }
-      // Aktivität wird aus der "activities" Liste aller verbundenen Teilnehmer und Übungsleiter entfernt
-      await Account.updateMany({ "activities._id": id }, { $pull: { activities: { _id: id } } });
       return res.send(`Successfully deleted activity ${deleted._id}`);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment

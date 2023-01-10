@@ -66,7 +66,9 @@ accountRoutes.get("/account/info", authenticateJWT, async (req: Request, res: Re
   if (mongoose.Types.ObjectId.isValid(id)) {
     try {
       // Accountdaten des Nutzers werden in der Collection gesucht. id, password, type und tier werden nicht mitgegeben
-      const requestedAccount = await Account.findOne({ _id: id }, { _id: false, password: false, type: false, tier: false });
+      const requestedAccount = await Account.findOne({ _id: id }, { _id: false, password: false, type: false, tier: false })
+        .populate("related_accounts", "id first_name last_name birthday")
+        .populate("activities", "id name sport dates");
       if (!requestedAccount) {
         res.status(404).send("Account not found");
       }
@@ -95,12 +97,7 @@ accountRoutes.patch("/account/info", authenticateJWT, async (req: Request, res: 
       if (!updated) {
         return res.status(404).send("Account not found");
       }
-      // Informationen des Nutzers werden in der "related_accounts" Liste von anderen Profilen, in der "trainers" und
-      // der "participants" Liste der Aktivitäten aktualisiert
-      await Account.updateMany(
-        { "related_accounts._id": id },
-        { $set: { "related_accounts.$.first_name": updated.first_name, "related_accounts.$.last_name": updated.last_name } }
-      );
+      // Da Trainer Einträge nicht Mongoose-Referenzen benutzen, werden diese hier separat aktualisiert
       await Activity.updateMany(
         { "trainers._id": id },
         {
@@ -108,16 +105,6 @@ accountRoutes.patch("/account/info", authenticateJWT, async (req: Request, res: 
             "trainers.$.first_name": updated.first_name,
             "trainers.$.last_name": updated.last_name,
             "trainers.$.phone_number": updated.phone_number,
-          },
-        }
-      );
-      await Activity.updateMany(
-        { "participants._id": id },
-        {
-          $set: {
-            "participants.$.first_name": updated.first_name,
-            "participants.$.last_name": updated.last_name,
-            "participants.$.birthday": updated.birthday,
           },
         }
       );
@@ -138,7 +125,7 @@ accountRoutes.get("/account/profile-list", authenticateJWT, async (req: Request,
   const id = authReq.account.id;
   if (mongoose.Types.ObjectId.isValid(id)) {
     try {
-      const accounts: AccountType[] = await Account.find();
+      const accounts: AccountType[] = await Account.find().populate("related_accounts", "id first_name last_name birthday");
       const profileList = await getAccountListById(id, accounts);
       return res.send(profileList);
     } catch (error) {
@@ -166,11 +153,7 @@ accountRoutes.post("/account/create-profile", authenticateJWT, async (req, res) 
         { _id: id },
         {
           $addToSet: {
-            related_accounts: {
-              _id: newProfile.id,
-              first_name: newProfile.first_name,
-              last_name: newProfile.last_name,
-            },
+            related_accounts: newProfile.id,
           },
         },
         { new: true, runValidators: true }
@@ -208,7 +191,7 @@ accountRoutes.delete("/account/delete-profile", authenticateJWT, async (req, res
       await Account.updateOne(
         { _id: id },
         {
-          $pull: { related_accounts: { _id: deletedProfileId } },
+          $pull: { related_accounts: deletedProfileId },
         }
       );
       return res.status(200).send("Profile deleted");
