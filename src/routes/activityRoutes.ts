@@ -75,8 +75,15 @@ activityRoutes.get("/activity/:activityId", checkForJWT, async (req, res) => {
     if (mongoose.Types.ObjectId.isValid(id)) {
       try {
         const requestedActivity = await Activity.findOne(
-          { _id: id },
-          { maximum_participants: false, dates: false, address: false, trainers: false, participants: false }
+          { _id: id, only_logged_in: false },
+          {
+            maximum_participants: false,
+            dates: false,
+            address: false,
+            trainers: false,
+            participants: false,
+            only_logged_in: false,
+          }
         );
         if (!requestedActivity) {
           return res.status(404).send("Activity not found");
@@ -145,8 +152,29 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
     const searchQuery: string = authReq.params.query.toLowerCase();
     try {
       const account = await Account.findOne({ _id: id });
-      const filteredActivitiesList: ActivityType[] = await Activity.find(constructPreferenceModel(account));
-      const completeActivitiesList: ActivityType[] = await Activity.find();
+      const filteredActivitiesList: ActivityType[] = await Activity.find(constructPreferenceModel(account), {
+        only_logged_in: false,
+        participants: false,
+        trainers: false,
+        requirements: false,
+        required_items: false,
+        additional_info: false,
+        maximum_participants: false,
+        membership_fee: false,
+      });
+      const completeActivitiesList: ActivityType[] = await Activity.find(
+        {},
+        {
+          only_logged_in: false,
+          participants: false,
+          trainers: false,
+          requirements: false,
+          required_items: false,
+          additional_info: false,
+          maximum_participants: false,
+          membership_fee: false,
+        }
+      );
       const cleanedActivitiesList = await deleteDuplicateEntries(filteredActivitiesList, completeActivitiesList);
       const activitiesList = filteredActivitiesList.concat(cleanedActivitiesList);
       res.send(searchActivities(searchQuery, activitiesList));
@@ -158,7 +186,7 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
   } else {
     const searchQuery: string = authReq.params.query.toLowerCase();
     try {
-      const activitiesList: ActivityType[] = await Activity.find();
+      const activitiesList: ActivityType[] = await Activity.find({ only_logged_in: false });
       res.send(searchActivities(searchQuery, activitiesList));
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment

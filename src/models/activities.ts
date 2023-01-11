@@ -63,6 +63,7 @@ const ActivitySchema = new mongoose.Schema({
     ],
     required: true,
   },
+  only_logged_in: { type: Boolean, default: false },
   participants: [{ type: mongoose.Schema.Types.ObjectId, ref: "Account" }],
 });
 
