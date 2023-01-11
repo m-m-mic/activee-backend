@@ -72,13 +72,18 @@ activityRoutes.get("/activity/:activityId", authenticateJWT, async (req, res) =>
 
 // PATCH-Request zum Aktualisieren einer Aktivität
 activityRoutes.patch("/activity/:activityId", authenticateJWT, async (req, res) => {
-  const updatedActivity = req.body;
-  const id = req.params.activityId;
-  if (mongoose.Types.ObjectId.isValid(id)) {
+  const authReq = req as unknown as authenticatedRequest;
+  const updatedActivity = authReq.body;
+  const accountId = authReq.account.id;
+  const activityId = authReq.params.activityId;
+  if (mongoose.Types.ObjectId.isValid(activityId)) {
     try {
-      const updated = await Activity.findOneAndUpdate({ _id: id }, updatedActivity, { new: true, runValidators: true });
+      const updated = await Activity.findOneAndUpdate({ _id: activityId, "trainers._id": accountId }, updatedActivity, {
+        new: true,
+        runValidators: true,
+      });
       if (!updated) {
-        return res.status(404).send("Activity not found");
+        return res.status(404).send("Cannot access activity");
       }
       return res.send(updated);
     } catch (error) {
