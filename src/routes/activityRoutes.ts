@@ -5,6 +5,7 @@ import { ActivityType } from "../interfaces";
 import { constructPreferenceModel, deleteDuplicateEntries, searchActivities, shuffleArray } from "../scripts/activitiesScripts";
 import { authenticatedRequest, authenticateJWT } from "../middleware/authenticateJWT";
 import { Account } from "../models/accounts";
+import { checkForJWT } from "../middleware/checkForJWT";
 
 export const activityRoutes = express.Router();
 
@@ -51,22 +52,42 @@ activityRoutes.get("/activity/filtered", authenticateJWT, async (req, res) => {
 });
 
 // GET-Request zum Abrufen einer spezifischen Aktivität
-activityRoutes.get("/activity/:activityId", authenticateJWT, async (req, res) => {
-  const id = req.params.activityId;
-  if (mongoose.Types.ObjectId.isValid(id)) {
-    try {
-      const requestedActivity = await Activity.findOne({ _id: id });
-      if (!requestedActivity) {
-        return res.status(404).send("Activity not found");
+activityRoutes.get("/activity/:activityId", checkForJWT, async (req, res) => {
+  const authReq = req as unknown as authenticatedRequest;
+  const id = authReq.params.activityId;
+  if (authReq.account) {
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      try {
+        const requestedActivity = await Activity.findOne({ _id: id });
+        if (!requestedActivity) {
+          return res.status(404).send("Activity not found");
+        }
+        res.send(requestedActivity);
+      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return res.status(400).send(error.message);
       }
-      res.send(requestedActivity);
-    } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      return res.status(400).send(error.message);
+    } else {
+      return res.status(403).send("Invalid activity id");
     }
   } else {
-    return res.status(403).send("Invalid activity id");
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      try {
+        const requestedActivity = await Activity.findOne(
+          { _id: id },
+          { maximum_participants: false, dates: false, address: false, trainers: false, participants: false }
+        );
+        if (!requestedActivity) {
+          return res.status(404).send("Activity not found");
+        }
+        res.send(requestedActivity);
+      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return res.status(400).send(error.message);
+      }
+    }
   }
 });
 
@@ -117,22 +138,32 @@ activityRoutes.delete("/activity/:activityId", authenticateJWT, async (req, res)
 });
 
 // GET-Request von Aktivitäten anhand von Suchbegriff
-activityRoutes.get("/search/:query", authenticateJWT, async (req, res) => {
+activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
   const authReq = req as unknown as authenticatedRequest;
-  const id = authReq.account.id;
-  const searchQuery: string = authReq.params.query.toLowerCase();
-  try {
-    const account = await Account.findOne({ _id: id });
-    const filteredActivitiesList: ActivityType[] = await Activity.find(constructPreferenceModel(account));
-    const completeActivitiesList: ActivityType[] = await Activity.find();
-    const cleanedActivitiesList = await deleteDuplicateEntries(filteredActivitiesList, completeActivitiesList);
-    res.send({
-      filtered: searchActivities(searchQuery, filteredActivitiesList),
-      other: searchActivities(searchQuery, cleanedActivitiesList),
-    });
-  } catch (error) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    return res.status(400).send(error.message);
+  if (authReq.account) {
+    const id = authReq.account.id;
+    const searchQuery: string = authReq.params.query.toLowerCase();
+    try {
+      const account = await Account.findOne({ _id: id });
+      const filteredActivitiesList: ActivityType[] = await Activity.find(constructPreferenceModel(account));
+      const completeActivitiesList: ActivityType[] = await Activity.find();
+      const cleanedActivitiesList = await deleteDuplicateEntries(filteredActivitiesList, completeActivitiesList);
+      const activitiesList = filteredActivitiesList.concat(cleanedActivitiesList);
+      res.send(searchActivities(searchQuery, activitiesList));
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
+  } else {
+    const searchQuery: string = authReq.params.query.toLowerCase();
+    try {
+      const activitiesList: ActivityType[] = await Activity.find();
+      res.send(searchActivities(searchQuery, activitiesList));
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
   }
 });
