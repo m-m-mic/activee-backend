@@ -124,6 +124,55 @@ activityRoutes.patch("/activity/:activityId", authenticateJWT, async (req, res) 
   }
 });
 
+activityRoutes.patch("/activity/:activityId/save", authenticateJWT, async (req, res) => {
+  const accounts = req.body.accounts;
+  const activityId = req.params.activityId;
+  if (mongoose.Types.ObjectId.isValid(activityId)) {
+    try {
+      let response = "";
+      const activity = await Activity.findOne({ _id: activityId });
+      if (activity) {
+        for (const accountId of accounts) {
+          if (activity.participants.includes(accountId)) {
+            const index = activity.participants.indexOf(accountId);
+            activity.participants.splice(index, 1);
+            await Account.updateOne(
+              { _id: accountId },
+              {
+                $pull: { activities: activityId },
+              },
+              {
+                runValidators: true,
+              }
+            ).then(() => (response += `deleted account id ${accountId} from activity id ${activityId}\n`));
+          } else {
+            activity.participants.push(accountId);
+            await Account.updateOne(
+              { _id: accountId },
+              {
+                $addToSet: { activities: activityId },
+              },
+              {
+                runValidators: true,
+              }
+            ).then(() => (response += `added account id ${accountId} from activity id ${activityId}\n`));
+          }
+        }
+        activity.save();
+        res.send(response);
+      } else {
+        res.status(404).send("Activity not found");
+      }
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
+  } else {
+    return res.status(403).send("Invalid activity id");
+  }
+});
+
 // DELETE-Request zum Löschen einer Aktivität
 activityRoutes.delete("/activity/:activityId", authenticateJWT, async (req, res) => {
   const id = req.params.activityId;
