@@ -1,6 +1,8 @@
 import express from "express";
 import { Sport } from "../models/sports";
-import { authenticateJWT } from "../middleware/authenticateJWT";
+import { authenticatedRequest, authenticateJWT } from "../middleware/authenticateJWT";
+import { Account } from "../models/accounts";
+import { shuffleArray } from "../scripts/activitiesScripts";
 
 export const sportRoutes = express.Router();
 
@@ -32,7 +34,7 @@ sportRoutes.get("/sport/", authenticateJWT, async (req, res) => {
 sportRoutes.get("/sport/:sportId", authenticateJWT, async (req, res) => {
   const id = req.params.sportId;
   try {
-    const sport = await Sport.findOne({ _id: id });
+    const sport = await Sport.findOne({ _id: id }).populate("activities", "id name sport");
     if (!sport) {
       return res.status(404).send("Sport not found");
     }
@@ -44,7 +46,32 @@ sportRoutes.get("/sport/:sportId", authenticateJWT, async (req, res) => {
   }
 });
 
-sportRoutes.patch("/sport/dev", async (req, res) => {
-  await Sport.updateMany({}, { description: { instruction: "no instruction given", history: "no history given" } });
-  res.send("lol");
+sportRoutes.get("/curated/sport", authenticateJWT, async (req, res) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  try {
+    const account = await Account.findOne({ _id: id });
+    if (account) {
+      let sports = account.sports;
+      if (sports.length < 4) {
+        const sportIds: string[] = [];
+        for (const sport of sports) {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          sportIds.push(sport._id);
+        }
+        const otherSports = await Sport.find({ _id: { $nin: sportIds } });
+        sports = sports.concat(shuffleArray(otherSports));
+        res.send(sports.slice(0, 4));
+      } else {
+        res.send(sports.slice(0, 4));
+      }
+    } else {
+      res.status(404).send("Account not found");
+    }
+  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return res.status(400).send(error.message);
+  }
 });

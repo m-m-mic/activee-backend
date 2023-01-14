@@ -36,7 +36,7 @@ activityRoutes.post("/activity/", authenticateJWT, async (req, res) => {
 });
 
 // GET-Request zum Abrufen aller Empfehlungen für einen Nutzer
-activityRoutes.get("/activity/filtered", authenticateJWT, async (req, res) => {
+activityRoutes.get("/activity/recommendations", authenticateJWT, async (req, res) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
   try {
@@ -44,6 +44,22 @@ activityRoutes.get("/activity/filtered", authenticateJWT, async (req, res) => {
     const model = constructPreferenceModel(account);
     const activities = await Activity.find(model);
     res.send(shuffleArray(activities));
+  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return res.status(400).send(error.message);
+  }
+});
+
+activityRoutes.get("/activity/recommendations/shortened", authenticateJWT, async (req, res) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  try {
+    const account = await Account.findOne({ _id: id });
+    const model = constructPreferenceModel(account);
+    let activities = await Activity.find(model);
+    activities = shuffleArray(activities);
+    res.send(activities.slice(0, 8));
   } catch (error) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore

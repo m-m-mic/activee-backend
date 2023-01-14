@@ -49,7 +49,6 @@ export function constructPreferenceModel(account) {
       ],
     };
   }
-  console.log(model);
   return model;
 }
 
