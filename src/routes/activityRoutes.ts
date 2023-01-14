@@ -182,6 +182,8 @@ activityRoutes.delete("/activity/:activityId", authenticateJWT, async (req, res)
       if (!deleted) {
         return res.status(404).send("Activity not found");
       }
+      // Profil wird aus allen angemeldeten Aktivitäten gelöscht
+      await Account.updateMany({ activities: id }, { $pull: { activities: id } });
       return res.send(`Successfully deleted activity ${deleted._id}`);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment

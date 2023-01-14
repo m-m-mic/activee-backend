@@ -194,6 +194,8 @@ accountRoutes.delete("/account/delete-profile", authenticateJWT, async (req, res
           $pull: { related_accounts: deletedProfileId },
         }
       );
+      // Profil wird aus allen angemeldeten Aktivitäten gelöscht
+      await Activity.updateMany({ participants: deletedProfileId }, { $pull: { participants: deletedProfileId } });
       return res.status(200).send("Profile deleted");
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
