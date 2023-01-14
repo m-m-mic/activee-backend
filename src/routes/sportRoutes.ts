@@ -64,6 +64,7 @@ sportRoutes.get("/curated/sport", authenticateJWT, async (req, res) => {
         sports = sports.concat(shuffleArray(otherSports));
         res.send(sports.slice(0, 4));
       } else {
+        sports = shuffleArray(sports);
         res.send(sports.slice(0, 4));
       }
     } else {
