@@ -39,11 +39,23 @@ activityRoutes.post("/activity/", authenticateJWT, async (req, res) => {
 activityRoutes.get("/activity/recommendations", authenticateJWT, async (req, res) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
+  const page: number = parseInt(<string>authReq.query.page) || 0;
+  const limit: number = parseInt(<string>authReq.query.limit) || 15;
   try {
+    let response;
+    response = { last_page: false };
     const account = await Account.findOne({ _id: id });
     const model = constructPreferenceModel(account, id);
-    const activities = await Activity.find(model);
-    res.send(shuffleArray(activities));
+    let activities = await Activity.find(model);
+    const totalRecommendations = activities.length;
+    const startIndex = page * limit;
+    const endIndex = (page + 1) * limit;
+    if (endIndex >= totalRecommendations) {
+      response.last_page = true;
+    }
+    activities = activities.slice(startIndex, endIndex);
+    response = { ...response, activities: activities };
+    res.send(response);
   } catch (error) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -70,11 +82,23 @@ activityRoutes.get("/activity/recommendations/shortened", authenticateJWT, async
 activityRoutes.get("/activity/club", authenticateJWT, async (req, res) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
+  const page: number = parseInt(<string>authReq.query.page) || 0;
+  const limit: number = parseInt(<string>authReq.query.limit) || 15;
   try {
     const account = await Account.findOne({ _id: id });
     if (account) {
-      const activities = await Activity.find({ club: account.club, "trainers._id": { $nin: id } });
-      res.send(shuffleArray(activities));
+      let response;
+      response = { last_page: false };
+      let activities = await Activity.find({ club: account.club, "trainers._id": { $nin: id } });
+      const totalResults = activities.length;
+      const startIndex = page * limit;
+      const endIndex = (page + 1) * limit;
+      if (endIndex >= totalResults) {
+        response.last_page = true;
+      }
+      activities = activities.slice(startIndex, endIndex);
+      response = { ...response, activities: activities };
+      res.send(response);
     } else {
       res.status(404).send("Account not found");
     }
@@ -251,12 +275,16 @@ activityRoutes.delete("/activity/:activityId", authenticateJWT, async (req, res)
 // GET-Request von Aktivitäten anhand von Suchbegriff
 activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
   const authReq = req as unknown as authenticatedRequest;
+  const page: number = parseInt(<string>authReq.query.page) || 0;
+  const limit: number = parseInt(<string>authReq.query.limit) || 15;
   if (authReq.account) {
     const id = authReq.account.id;
     const searchQuery: string = authReq.params.query.toLowerCase();
     try {
+      let response;
+      response = { last_page: false };
       const account = await Account.findOne({ _id: id });
-      const filteredActivitiesList: ActivityType[] = await Activity.find(constructPreferenceModel(account, null), {
+      const preferredActivities: ActivityType[] = await Activity.find(constructPreferenceModel(account, null), {
         only_logged_in: false,
         participants: false,
         trainers: false,
@@ -266,7 +294,7 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
         maximum_participants: false,
         membership_fee: false,
       });
-      const completeActivitiesList: ActivityType[] = await Activity.find(
+      const allActivities: ActivityType[] = await Activity.find(
         {},
         {
           only_logged_in: false,
@@ -279,9 +307,18 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
           membership_fee: false,
         }
       );
-      const cleanedActivitiesList = await deleteDuplicateEntries(filteredActivitiesList, completeActivitiesList);
-      const activitiesList = filteredActivitiesList.concat(cleanedActivitiesList);
-      res.send(searchActivities(searchQuery, activitiesList));
+      const cleanedActivitiesList = await deleteDuplicateEntries(preferredActivities, allActivities);
+      const sortedActivities = preferredActivities.concat(cleanedActivitiesList);
+      const totalResults = sortedActivities.length;
+      const startIndex = page * limit;
+      const endIndex = (page + 1) * limit;
+      if (endIndex >= totalResults) {
+        response.last_page = true;
+      }
+      let activities = searchActivities(searchQuery, sortedActivities);
+      activities = activities.slice(startIndex, endIndex);
+      response = { ...response, activities: activities };
+      res.send(response);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
