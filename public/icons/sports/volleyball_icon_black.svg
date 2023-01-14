@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 27.1.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Ebene_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 25 24" style="enable-background:new 0 0 25 24;" xml:space="preserve">
+<style type="text/css">
+	.st0{clip-path:url(#SVGID_00000165226078993399631360000007729353811417994666_);}
+	.st1{fill:#1D1D1D;}
+</style>
+<g>
+	<defs>
+		<rect id="SVGID_1_" x="0.5" width="24" height="24"/>
+	</defs>
+	<clipPath id="SVGID_00000058551515815512466560000016170278230816767141_">
+		<use xlink:href="#SVGID_1_"  style="overflow:visible;"/>
+	</clipPath>
+	<g style="clip-path:url(#SVGID_00000058551515815512466560000016170278230816767141_);">
+		<path class="st1" d="M6.5,4c-2.4,1.8-4,4.7-4,8c0,1.5,0.3,2.9,0.9,4.1l3.1-1.8V4z"/>
+		<path class="st1" d="M11.5,11.4V2c-1.1,0.1-2.1,0.4-3,0.8v10.3L11.5,11.4z"/>
+		<path class="st1" d="M12.5,13.1l-8.1,4.7C5,18.7,5.7,19.4,6.6,20l8.9-5.1L12.5,13.1z"/>
+		<path class="st1" d="M13.5,8v3.5l8.1,4.7c0.4-0.9,0.7-1.9,0.8-3L13.5,8z"/>
+		<path class="st1" d="M8.6,21.2c1.2,0.5,2.5,0.8,3.9,0.8c3.3,0,6.3-1.6,8.1-4.2L17.5,16L8.6,21.2z"/>
+		<path class="st1" d="M22.4,10.8c-0.5-4.6-4.3-8.3-8.9-8.8v3.6L22.4,10.8z"/>
+	</g>
+</g>
+</svg>
