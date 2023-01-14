@@ -20,7 +20,7 @@ export function searchActivities(searchQuery: string, activities: ActivityType[]
 // Mit der Funktion wird anhand von den Angaben des Nutzers im Profil ein Modell erstellt, mit welchen alle Aktivitäten
 // durchsucht und gefiltert werden können.
 // Wenn der Nutzer Angaben getätigt hat, müssen die Angaben der Aktivität mit diesen übereinstimmen
-export function constructPreferenceModel(account) {
+export function constructPreferenceModel(account, id) {
   let model = {};
   if (account.genders.length > 0) {
     model = { ...model, "gender._id": { $in: account.genders } };
@@ -48,6 +48,9 @@ export function constructPreferenceModel(account) {
         { "age.age": { $gte: age }, "age.isOlderThan": false },
       ],
     };
+  }
+  if (id) {
+    model = { ...model, participants: { $nin: id } };
   }
   return model;
 }

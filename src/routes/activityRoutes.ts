@@ -41,7 +41,7 @@ activityRoutes.get("/activity/recommendations", authenticateJWT, async (req, res
   const id = authReq.account.id;
   try {
     const account = await Account.findOne({ _id: id });
-    const model = constructPreferenceModel(account);
+    const model = constructPreferenceModel(account, id);
     const activities = await Activity.find(model);
     res.send(shuffleArray(activities));
   } catch (error) {
@@ -56,7 +56,7 @@ activityRoutes.get("/activity/recommendations/shortened", authenticateJWT, async
   const id = authReq.account.id;
   try {
     const account = await Account.findOne({ _id: id });
-    const model = constructPreferenceModel(account);
+    const model = constructPreferenceModel(account, id);
     let activities = await Activity.find(model);
     activities = shuffleArray(activities);
     res.send(activities.slice(0, 8));
@@ -256,7 +256,7 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
     const searchQuery: string = authReq.params.query.toLowerCase();
     try {
       const account = await Account.findOne({ _id: id });
-      const filteredActivitiesList: ActivityType[] = await Activity.find(constructPreferenceModel(account), {
+      const filteredActivitiesList: ActivityType[] = await Activity.find(constructPreferenceModel(account, null), {
         only_logged_in: false,
         participants: false,
         trainers: false,
