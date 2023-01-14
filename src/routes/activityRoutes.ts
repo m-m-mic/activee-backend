@@ -67,6 +67,43 @@ activityRoutes.get("/activity/recommendations/shortened", authenticateJWT, async
   }
 });
 
+activityRoutes.get("/activity/club", authenticateJWT, async (req, res) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  try {
+    const account = await Account.findOne({ _id: id });
+    if (account) {
+      const activities = await Activity.find({ club: account.club, "trainers._id": { $nin: id } });
+      res.send(shuffleArray(activities));
+    } else {
+      res.status(404).send("Account not found");
+    }
+  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return res.status(400).send(error.message);
+  }
+});
+
+activityRoutes.get("/activity/club/shortened", authenticateJWT, async (req, res) => {
+  const authReq = req as authenticatedRequest;
+  const id = authReq.account.id;
+  try {
+    const account = await Account.findOne({ _id: id });
+    if (account) {
+      let activities = await Activity.find({ club: account.club, "trainers._id": { $nin: id } });
+      activities = shuffleArray(activities);
+      res.send(activities.slice(0, 8));
+    } else {
+      res.status(404).send("Account not found");
+    }
+  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return res.status(400).send(error.message);
+  }
+});
+
 // GET-Request zum Abrufen einer spezifischen Aktivität
 activityRoutes.get("/activity/:activityId", checkForJWT, async (req, res) => {
   const authReq = req as unknown as authenticatedRequest;
