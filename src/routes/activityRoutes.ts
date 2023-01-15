@@ -38,30 +38,67 @@ activityRoutes.post("/activity/", authenticateJWT, async (req, res) => {
 });
 
 // GET-Request zum Abrufen aller Empfehlungen für einen Nutzer
-activityRoutes.get("/activity/recommendations", authenticateJWT, async (req, res) => {
+activityRoutes.get("/activity/recommendations", checkForJWT, async (req, res) => {
   const authReq = req as authenticatedRequest;
-  const id = authReq.account.id;
   const page: number = parseInt(<string>authReq.query.page) || 0;
   const limit: number = parseInt(<string>authReq.query.limit) || 15;
-  try {
-    let response;
-    response = { last_page: false };
-    const account = await Account.findOne({ _id: id });
-    const model = constructPreferenceModel(account, id);
-    let activities = await Activity.find(model).populate("sport", "id name");
-    const totalRecommendations = activities.length;
-    const startIndex = page * limit;
-    const endIndex = (page + 1) * limit;
-    if (endIndex >= totalRecommendations) {
-      response.last_page = true;
+  if (authReq.account) {
+    const id = authReq.account.id;
+    try {
+      let response;
+      response = { last_page: false };
+      const account = await Account.findOne({ _id: id });
+      const model = constructPreferenceModel(account, id);
+      let activities = await Activity.find(model).populate("sport", "id name");
+      const totalRecommendations = activities.length;
+      const startIndex = page * limit;
+      const endIndex = (page + 1) * limit;
+      if (endIndex >= totalRecommendations) {
+        response.last_page = true;
+      }
+      activities = activities.slice(startIndex, endIndex);
+      response = { ...response, activities: activities };
+      res.send(response);
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return res.status(400).send(error.message);
     }
-    activities = activities.slice(startIndex, endIndex);
-    response = { ...response, activities: activities };
-    res.send(response);
-  } catch (error) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    return res.status(400).send(error.message);
+  } else {
+    try {
+      // Gleiche Logik wie bei angemeldeten Nutzern, nur ohne Präferenz-Filtering
+      let response;
+      response = { last_page: false };
+      const allActivities: ActivityType[] = await Activity.find(
+        { only_logged_in: false },
+        {
+          only_logged_in: false,
+          participants: false,
+          trainers: false,
+          requirements: false,
+          required_items: false,
+          additional_info: false,
+          maximum_participants: false,
+          membership_fee: false,
+          dates: false,
+          address: false,
+        }
+      ).populate("sport", "id name");
+      let activities = shuffleArray(allActivities);
+      const totalResults = activities.length;
+      const startIndex = page * limit;
+      const endIndex = (page + 1) * limit;
+      if (endIndex >= totalResults) {
+        response.last_page = true;
+      }
+      activities = activities.slice(startIndex, endIndex);
+      response = { ...response, activities: activities };
+      res.send(response);
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
   }
 });
 
@@ -71,7 +108,6 @@ activityRoutes.get("/activity/recommendations/shortened", authenticateJWT, async
   try {
     const account = await Account.findOne({ _id: id });
     const model = constructPreferenceModel(account, id);
-    console.log(model);
     let activities = await Activity.find(model).populate("sport", "id name");
     activities = shuffleArray(activities);
     res.send(activities.slice(0, 8));
@@ -283,14 +319,19 @@ activityRoutes.delete("/activity/:activityId", authenticateJWT, async (req, res)
 // GET-Request von Aktivitäten anhand von Suchbegriff
 activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
   const authReq = req as unknown as authenticatedRequest;
+  // Seitenanzahl für den Request
   const page: number = parseInt(<string>authReq.query.page) || 0;
+  // Anzahl an Elementen pro Seite
   const limit: number = parseInt(<string>authReq.query.limit) || 15;
+  // Abfrage für angemeldete Nutzer
   if (authReq.account) {
     const id = authReq.account.id;
     const searchQuery: string = authReq.params.query.toLowerCase();
     try {
       let response;
       response = { last_page: false };
+      // Account des Request-Senders wird gesucht und dessen Präferenzen werden verwendet, um die relevantesten
+      // Ergebnisse als Erstes zu zeigen
       const account = await Account.findOne({ _id: id });
       const preferredActivities: ActivityType[] = await Activity.find(constructPreferenceModel(account, null), {
         only_logged_in: false,
@@ -302,6 +343,7 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
         maximum_participants: false,
         membership_fee: false,
       }).populate("sport", "id name");
+      // Aufrufen aller Aktivitäten
       const allActivities: ActivityType[] = await Activity.find(
         {},
         {
@@ -315,12 +357,16 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
           membership_fee: false,
         }
       ).populate("sport", "id name");
+      // Aktivitäten aus der preferred-Liste werden aus der all-Liste gelöscht
       const cleanedActivitiesList = await deleteDuplicateEntries(preferredActivities, allActivities);
+      // All-Liste wird an preferred-Liste angefügt
       const sortedActivities = preferredActivities.concat(cleanedActivitiesList);
+      // Liste wird anhand von Suchbegriff gefiltered
       let activities = searchActivities(searchQuery, sortedActivities);
       const totalResults = activities.length;
       const startIndex = page * limit;
       const endIndex = (page + 1) * limit;
+      // Setzt last_page auf true, falls es nicht mehr Ergebnisse auf anderen Seiten gibt
       if (endIndex >= totalResults) {
         response.last_page = true;
       }
@@ -333,10 +379,37 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
       return res.status(400).send(error.message);
     }
   } else {
+    // Für unangemeldete Nutzer
     const searchQuery: string = authReq.params.query.toLowerCase();
     try {
-      const activitiesList: ActivityType[] = await Activity.find({ only_logged_in: false });
-      res.send(searchActivities(searchQuery, activitiesList));
+      // Gleiche Logik wie bei angemeldeten Nutzern, nur ohne Präferenz-Filtering
+      let response;
+      response = { last_page: false };
+      const allActivities: ActivityType[] = await Activity.find(
+        { only_logged_in: false },
+        {
+          only_logged_in: false,
+          participants: false,
+          trainers: false,
+          requirements: false,
+          required_items: false,
+          additional_info: false,
+          maximum_participants: false,
+          membership_fee: false,
+          dates: false,
+          address: false,
+        }
+      ).populate("sport", "id name");
+      let activities = searchActivities(searchQuery, allActivities);
+      const totalResults = activities.length;
+      const startIndex = page * limit;
+      const endIndex = (page + 1) * limit;
+      if (endIndex >= totalResults) {
+        response.last_page = true;
+      }
+      activities = activities.slice(startIndex, endIndex);
+      response = { ...response, activities: activities };
+      res.send(response);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
