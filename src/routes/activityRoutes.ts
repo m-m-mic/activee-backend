@@ -6,6 +6,7 @@ import { constructPreferenceModel, deleteDuplicateEntries, searchActivities, shu
 import { authenticatedRequest, authenticateJWT } from "../middleware/authenticateJWT";
 import { Account } from "../models/accounts";
 import { checkForJWT } from "../middleware/checkForJWT";
+import { Sport } from "../models/sports";
 
 export const activityRoutes = express.Router();
 
@@ -26,6 +27,7 @@ activityRoutes.post("/activity/", authenticateJWT, async (req, res) => {
         },
       }
     );
+    await Sport.findOneAndUpdate({ _id: newActivity.sport }, { $addToSet: { activities: newActivity._id } });
     // Neue Aktivität wird zurückgegeben
     return res.status(201).send(newActivity);
   } catch (error) {
@@ -46,7 +48,7 @@ activityRoutes.get("/activity/recommendations", authenticateJWT, async (req, res
     response = { last_page: false };
     const account = await Account.findOne({ _id: id });
     const model = constructPreferenceModel(account, id);
-    let activities = await Activity.find(model);
+    let activities = await Activity.find(model).populate("sport", "id name");
     const totalRecommendations = activities.length;
     const startIndex = page * limit;
     const endIndex = (page + 1) * limit;
@@ -69,7 +71,8 @@ activityRoutes.get("/activity/recommendations/shortened", authenticateJWT, async
   try {
     const account = await Account.findOne({ _id: id });
     const model = constructPreferenceModel(account, id);
-    let activities = await Activity.find(model);
+    console.log(model);
+    let activities = await Activity.find(model).populate("sport", "id name");
     activities = shuffleArray(activities);
     res.send(activities.slice(0, 8));
   } catch (error) {
@@ -89,7 +92,7 @@ activityRoutes.get("/activity/club", authenticateJWT, async (req, res) => {
     if (account) {
       let response;
       response = { last_page: false };
-      let activities = await Activity.find({ club: account.club, "trainers._id": { $nin: id } });
+      let activities = await Activity.find({ club: account.club, "trainers._id": { $nin: id } }).populate("sport", "id name");
       const totalResults = activities.length;
       const startIndex = page * limit;
       const endIndex = (page + 1) * limit;
@@ -115,7 +118,7 @@ activityRoutes.get("/activity/club/shortened", authenticateJWT, async (req, res)
   try {
     const account = await Account.findOne({ _id: id });
     if (account) {
-      let activities = await Activity.find({ club: account.club, "trainers._id": { $nin: id } });
+      let activities = await Activity.find({ club: account.club, "trainers._id": { $nin: id } }).populate("sport", "id name");
       activities = shuffleArray(activities);
       res.send(activities.slice(0, 8));
     } else {
@@ -135,7 +138,10 @@ activityRoutes.get("/activity/:activityId", checkForJWT, async (req, res) => {
   if (authReq.account) {
     if (mongoose.Types.ObjectId.isValid(id)) {
       try {
-        const requestedActivity = await Activity.findOne({ _id: id });
+        const requestedActivity = await Activity.findOne({ _id: id })
+          .populate("sport", "id name")
+          .populate("languages", "id name")
+          .populate("required_items", "id name");
         if (!requestedActivity) {
           return res.status(404).send("Activity not found");
         }
@@ -161,7 +167,7 @@ activityRoutes.get("/activity/:activityId", checkForJWT, async (req, res) => {
             participants: false,
             only_logged_in: false,
           }
-        );
+        ).populate("sport", "id name");
         if (!requestedActivity) {
           return res.status(404).send("Activity not found");
         }
@@ -259,8 +265,10 @@ activityRoutes.delete("/activity/:activityId", authenticateJWT, async (req, res)
       if (!deleted) {
         return res.status(404).send("Activity not found");
       }
-      // Profil wird aus allen angemeldeten Aktivitäten gelöscht
+      // Aktivität wird aus allen angemeldeten Accounts gelöscht
       await Account.updateMany({ activities: id }, { $pull: { activities: id } });
+      // Aktivität wird aus verbundener Sportart gelöscht
+      await Sport.updateOne({ activities: id }, { $pull: { activities: id } });
       return res.send(`Successfully deleted activity ${deleted._id}`);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -293,7 +301,7 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
         additional_info: false,
         maximum_participants: false,
         membership_fee: false,
-      });
+      }).populate("sport", "id name");
       const allActivities: ActivityType[] = await Activity.find(
         {},
         {
@@ -306,7 +314,7 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
           maximum_participants: false,
           membership_fee: false,
         }
-      );
+      ).populate("sport", "id name");
       const cleanedActivitiesList = await deleteDuplicateEntries(preferredActivities, allActivities);
       const sortedActivities = preferredActivities.concat(cleanedActivitiesList);
       let activities = searchActivities(searchQuery, sortedActivities);

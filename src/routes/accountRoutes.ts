@@ -68,7 +68,13 @@ accountRoutes.get("/account/info", authenticateJWT, async (req: Request, res: Re
       // Accountdaten des Nutzers werden in der Collection gesucht. id, password, type und tier werden nicht mitgegeben
       const requestedAccount = await Account.findOne({ _id: id }, { _id: false, password: false, type: false, tier: false })
         .populate("related_accounts", "id first_name last_name birthday")
-        .populate("activities", "id name sport dates");
+        .populate({
+          path: "activities",
+          populate: { path: "sport", model: "Sport", select: "id name" },
+          select: "id name sport dates",
+        })
+        .populate("sports", "id name")
+        .populate("languages", "id name");
       if (!requestedAccount) {
         res.status(404).send("Account not found");
       }
