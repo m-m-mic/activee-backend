@@ -23,9 +23,9 @@ const AccountSchema = new mongoose.Schema({
     },
     _id: false,
   },
-  languages: [{ _id: String, name: String }],
+  languages: [{ type: String, ref: "Language" }],
   genders: [String],
-  sports: [{ _id: String, name: String }],
+  sports: [{ type: String, ref: "Sport" }],
   transport: [String],
   distance: Number,
   times: {

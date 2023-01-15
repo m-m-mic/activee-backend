@@ -28,16 +28,16 @@ export function constructPreferenceModel(account, id) {
   if (account.sports.length > 0) {
     const sportIds: string[] = [];
     for (const sport of account.sports) {
-      sportIds.push(sport._id);
+      sportIds.push(sport);
     }
-    model = { ...model, "sport._id": { $in: sportIds } };
+    model = { ...model, sport: { $in: sportIds } };
   }
   if (account.languages.length > 0) {
     const languageIds: string[] = [];
     for (const language of account.languages) {
-      languageIds.push(language._id);
+      languageIds.push(language);
     }
-    model = { ...model, "languages._id": { $in: languageIds } };
+    model = { ...model, languages: { $in: languageIds } };
   }
   if (account.birthday) {
     const age = getAge(account.birthday);

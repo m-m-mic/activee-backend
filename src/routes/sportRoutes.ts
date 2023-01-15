@@ -34,7 +34,11 @@ sportRoutes.get("/sport/", authenticateJWT, async (req, res) => {
 sportRoutes.get("/sport/:sportId", authenticateJWT, async (req, res) => {
   const id = req.params.sportId;
   try {
-    const sport = await Sport.findOne({ _id: id }).populate("activities", "id name sport");
+    const sport = await Sport.findOne({ _id: id }).populate({
+      path: "activities",
+      populate: { path: "sport", model: "Sport", select: "id name" },
+      select: "id name sport dates",
+    });
     if (!sport) {
       return res.status(404).send("Sport not found");
     }
@@ -50,7 +54,7 @@ sportRoutes.get("/curated/sport", authenticateJWT, async (req, res) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
   try {
-    const account = await Account.findOne({ _id: id });
+    const account = await Account.findOne({ _id: id }).populate("sports", "id name");
     if (account) {
       let sports = account.sports;
       if (sports.length < 4) {
@@ -60,7 +64,7 @@ sportRoutes.get("/curated/sport", authenticateJWT, async (req, res) => {
           // @ts-ignore
           sportIds.push(sport._id);
         }
-        const otherSports = await Sport.find({ _id: { $nin: sportIds } });
+        const otherSports = await Sport.find({ _id: { $nin: sportIds } }, { _id: true, name: true });
         sports = sports.concat(shuffleArray(otherSports));
         res.send(sports.slice(0, 4));
       } else {

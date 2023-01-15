@@ -26,12 +26,12 @@ const ActivitySchema = new mongoose.Schema({
   },
   league: { type: String, trim: true },
   languages: {
-    type: [{ _id: String, name: String }],
+    type: [{ type: String, ref: "Language" }],
     required: true,
   },
   maximum_participants: Number,
   requirements: { type: String, trim: true },
-  required_items: [{ _id: String, name: String }],
+  required_items: [{ type: String, ref: "RequiredItem" }],
   additional_info: { type: String, trim: true },
   membership_fee: { type: String, trim: true },
   dates: {
