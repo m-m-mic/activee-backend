@@ -309,13 +309,13 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
       );
       const cleanedActivitiesList = await deleteDuplicateEntries(preferredActivities, allActivities);
       const sortedActivities = preferredActivities.concat(cleanedActivitiesList);
-      const totalResults = sortedActivities.length;
+      let activities = searchActivities(searchQuery, sortedActivities);
+      const totalResults = activities.length;
       const startIndex = page * limit;
       const endIndex = (page + 1) * limit;
       if (endIndex >= totalResults) {
         response.last_page = true;
       }
-      let activities = searchActivities(searchQuery, sortedActivities);
       activities = activities.slice(startIndex, endIndex);
       response = { ...response, activities: activities };
       res.send(response);
