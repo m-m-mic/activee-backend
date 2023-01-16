@@ -228,7 +228,7 @@ activityRoutes.get("/activity/:activityId/participants", authenticateJWT, async 
     try {
       const activity = await Activity.findOne(
         { _id: activityId, "trainers._id": accountId },
-        { id: true, name: true, club: true, participants: true }
+        { id: true, name: true, club: true, participants: true, trainers: true }
       ).populate("participants", "id first_name last_name birthday email parent_email");
       if (!activity) {
         return res.status(404).send("Cannot access activity");
