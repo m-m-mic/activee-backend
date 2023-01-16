@@ -203,7 +203,10 @@ activityRoutes.get("/activity/:activityId", checkForJWT, async (req, res) => {
             participants: false,
             only_logged_in: false,
           }
-        ).populate("sport", "id name");
+        )
+          .populate("sport", "id name")
+          .populate("languages", "id name")
+          .populate("required_items", "id name");
         if (!requestedActivity) {
           return res.status(404).send("Activity not found");
         }
@@ -214,6 +217,30 @@ activityRoutes.get("/activity/:activityId", checkForJWT, async (req, res) => {
         return res.status(400).send(error.message);
       }
     }
+  }
+});
+
+activityRoutes.get("/activity/:activityId/participants", authenticateJWT, async (req, res) => {
+  const authReq = req as unknown as authenticatedRequest;
+  const accountId = authReq.account.id;
+  const activityId = authReq.params.activityId;
+  if (mongoose.Types.ObjectId.isValid(activityId)) {
+    try {
+      const activity = await Activity.findOne(
+        { _id: activityId, "trainers._id": accountId },
+        { id: true, name: true, club: true, participants: true }
+      ).populate("participants", "id first_name last_name birthday email parent_email");
+      if (!activity) {
+        return res.status(404).send("Cannot access activity");
+      }
+      return res.send(activity);
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
+  } else {
+    return res.status(403).send("Invalid activity id");
   }
 });
 

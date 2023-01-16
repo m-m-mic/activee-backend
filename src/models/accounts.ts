@@ -9,6 +9,7 @@ const AccountSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  parent_email: { type: String, trim: true },
   first_name: { type: String, trim: true, required: true },
   last_name: { type: String, trim: true, required: true },
   club: { type: String, trim: true },
