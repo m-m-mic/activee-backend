@@ -48,6 +48,7 @@ activityRoutes.get("/activity/recommendations", checkForJWT, async (req, res) =>
       let response;
       response = { last_page: false };
       const account = await Account.findOne({ _id: id });
+      // Konstruiert ein Präferenzmodell anhand von Nutzerangaben
       const model = constructPreferenceModel(account, id);
       let activities = await Activity.find(model).populate("sport", "id name");
       const totalRecommendations = activities.length;
@@ -102,6 +103,7 @@ activityRoutes.get("/activity/recommendations", checkForJWT, async (req, res) =>
   }
 });
 
+// GET-Request für Empfehlungen, jedoch auf acht Einträge gekürzt
 activityRoutes.get("/activity/recommendations/shortened", authenticateJWT, async (req, res) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
@@ -118,6 +120,7 @@ activityRoutes.get("/activity/recommendations/shortened", authenticateJWT, async
   }
 });
 
+// GET-Request für die anderen Aktivitäten des eigenen Vereins für Übungsleiter:innen
 activityRoutes.get("/activity/club", authenticateJWT, async (req, res) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
@@ -148,6 +151,7 @@ activityRoutes.get("/activity/club", authenticateJWT, async (req, res) => {
   }
 });
 
+// GET-Request für die anderen Aktivitäten des eigenen Vereins, auf acht Einträge gekürzt
 activityRoutes.get("/activity/club/shortened", authenticateJWT, async (req, res) => {
   const authReq = req as authenticatedRequest;
   const id = authReq.account.id;
@@ -191,6 +195,7 @@ activityRoutes.get("/activity/:activityId", checkForJWT, async (req, res) => {
       return res.status(403).send("Invalid activity id");
     }
   } else {
+    // Falls der Nutzer nicht angemeldet wird, werden weniger Infos zurückgeliefert
     if (mongoose.Types.ObjectId.isValid(id)) {
       try {
         const requestedActivity = await Activity.findOne(

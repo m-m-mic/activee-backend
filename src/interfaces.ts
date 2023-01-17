@@ -64,6 +64,16 @@ interface AccountActivity {
   sport: PreselectOption;
 }
 
+export interface SportType extends PreselectOption {
+  activities: [ActivityType];
+  description: SportDescription;
+}
+
+interface SportDescription {
+  instruction: string;
+  history: string;
+}
+
 interface PreselectOption {
   _id: string;
   name: string;
