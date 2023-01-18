@@ -96,8 +96,10 @@ sportRoutes.get("/landing-page", async (req, res) => {
     let sports = await Sport.find({}, { description: false, __v: false }).populate({
       path: "activities",
       populate: { path: "sport", model: "Sport", select: "id name" },
+      match: { only_logged_in: false },
       select: "id name sport",
     });
+    console.log(sports);
     sports = shuffleArray(sports);
     sports = sports.slice(0, 4);
     for (let i = 0; i < sports.length; i++) {
