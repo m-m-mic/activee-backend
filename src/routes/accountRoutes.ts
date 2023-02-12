@@ -5,29 +5,33 @@ import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import { AccountType } from "../interfaces";
 import { getAccountListById } from "../scripts/accountScripts";
-import { secretToken } from "../index";
+import { denyChangeRequests, secretToken } from "../index";
 import { Activity } from "../models/activities";
 
 export const accountRoutes = express.Router();
 
 // POST-Request für Registrierung/Neuerstellung eines Accounts
 accountRoutes.post("/account/register", async (req, res) => {
-  try {
-    // Neuer Account wird erstellt und gespeichert
-    const newAccount = new Account({ ...req.body });
-    await newAccount.save();
-    // Access-Token wird generiert und an Frontend zurückgegeben
-    const accessToken = jwt.sign({ id: newAccount.id, type: newAccount.type }, secretToken);
-    return res.status(201).send({
-      token: accessToken,
-      id: newAccount.id,
-      type: newAccount.type,
-      tier: newAccount.tier,
-    });
-  } catch (error) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    return res.status(400).send(error.message);
+  if (denyChangeRequests === "true") {
+    return res.status(503).send("Change requests are disabled");
+  } else {
+    try {
+      // Neuer Account wird erstellt und gespeichert
+      const newAccount = new Account({ ...req.body });
+      await newAccount.save();
+      // Access-Token wird generiert und an Frontend zurückgegeben
+      const accessToken = jwt.sign({ id: newAccount.id, type: newAccount.type }, secretToken);
+      return res.status(201).send({
+        token: accessToken,
+        id: newAccount.id,
+        type: newAccount.type,
+        tier: newAccount.tier,
+      });
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
   }
 });
 
@@ -91,37 +95,41 @@ accountRoutes.get("/account/info", authenticateJWT, async (req: Request, res: Re
 
 // PATCH-Request zum Aktualisieren der eigenen Informationen
 accountRoutes.patch("/account/info", authenticateJWT, async (req: Request, res: Response) => {
-  const authReq = req as authenticatedRequest;
-  const id = authReq.account.id;
-  const updatedValues = req.body;
-  if (mongoose.Types.ObjectId.isValid(id)) {
-    try {
-      const updated = await Account.findOneAndUpdate({ _id: id }, updatedValues, {
-        new: true,
-        runValidators: true,
-      });
-      if (!updated) {
-        return res.status(404).send("Account not found");
-      }
-      // Da Trainer Einträge nicht Mongoose-Referenzen benutzen, werden diese hier separat aktualisiert
-      await Activity.updateMany(
-        { "trainers._id": id },
-        {
-          $set: {
-            "trainers.$.first_name": updated.first_name,
-            "trainers.$.last_name": updated.last_name,
-            "trainers.$.phone_number": updated.phone_number,
-          },
-        }
-      );
-      return res.send(updated);
-    } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      return res.status(400).send(error.message);
-    }
+  if (denyChangeRequests === "true") {
+    return res.status(503).send("Change requests are disabled");
   } else {
-    return res.status(403).send("Invalid account id");
+    const authReq = req as authenticatedRequest;
+    const id = authReq.account.id;
+    const updatedValues = req.body;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      try {
+        const updated = await Account.findOneAndUpdate({ _id: id }, updatedValues, {
+          new: true,
+          runValidators: true,
+        });
+        if (!updated) {
+          return res.status(404).send("Account not found");
+        }
+        // Da Trainer Einträge nicht Mongoose-Referenzen benutzen, werden diese hier separat aktualisiert
+        await Activity.updateMany(
+          { "trainers._id": id },
+          {
+            $set: {
+              "trainers.$.first_name": updated.first_name,
+              "trainers.$.last_name": updated.last_name,
+              "trainers.$.phone_number": updated.phone_number,
+            },
+          }
+        );
+        return res.send(updated);
+      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return res.status(400).send(error.message);
+      }
+    } else {
+      return res.status(403).send("Invalid account id");
+    }
   }
 });
 
@@ -146,70 +154,78 @@ accountRoutes.get("/account/profile-list", authenticateJWT, async (req: Request,
 
 // POST-Request zum Hinzufügen eines neuen Profils
 accountRoutes.post("/account/create-profile", authenticateJWT, async (req, res) => {
-  const authReq = req as authenticatedRequest;
-  const id = authReq.account.id;
-  const addedProfile = req.body;
-  if (mongoose.Types.ObjectId.isValid(id)) {
-    try {
-      // Neues Profil wird erstellt
-      const newProfile = new Account({ ...addedProfile });
-      await newProfile.save();
-      // Informationen des neuen Profils werden in die "related_accounts" Liste des Hauptprofils geschrieben
-      await Account.findOneAndUpdate(
-        { _id: id },
-        {
-          $addToSet: {
-            related_accounts: newProfile.id,
-          },
-        },
-        { new: true, runValidators: true }
-      );
-      // Neuer Token für das Profil wird generiert und ans Frontend zurückgegeben
-      const accessToken = await jwt.sign({ id: newProfile.id, type: newProfile.type }, secretToken);
-      return res.send({
-        token: accessToken,
-        id: newProfile.id,
-        type: newProfile.type,
-        tier: newProfile.tier,
-      });
-    } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      return res.status(400).send(error.message);
-    }
+  if (denyChangeRequests === "true") {
+    return res.status(503).send("Change requests are disabled");
   } else {
-    return res.status(403).send("Invalid profile id");
+    const authReq = req as authenticatedRequest;
+    const id = authReq.account.id;
+    const addedProfile = req.body;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      try {
+        // Neues Profil wird erstellt
+        const newProfile = new Account({ ...addedProfile });
+        await newProfile.save();
+        // Informationen des neuen Profils werden in die "related_accounts" Liste des Hauptprofils geschrieben
+        await Account.findOneAndUpdate(
+          { _id: id },
+          {
+            $addToSet: {
+              related_accounts: newProfile.id,
+            },
+          },
+          { new: true, runValidators: true }
+        );
+        // Neuer Token für das Profil wird generiert und ans Frontend zurückgegeben
+        const accessToken = await jwt.sign({ id: newProfile.id, type: newProfile.type }, secretToken);
+        return res.send({
+          token: accessToken,
+          id: newProfile.id,
+          type: newProfile.type,
+          tier: newProfile.tier,
+        });
+      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return res.status(400).send(error.message);
+      }
+    } else {
+      return res.status(403).send("Invalid profile id");
+    }
   }
 });
 
 // DELETE-Request zum Entfernen eines Unterprofils
 accountRoutes.delete("/account/delete-profile", authenticateJWT, async (req, res) => {
-  const authReq = req as authenticatedRequest;
-  const id = authReq.account.id;
-  const deletedProfileId = req.body.id;
-  if (mongoose.Types.ObjectId.isValid(id) && mongoose.Types.ObjectId.isValid(deletedProfileId)) {
-    try {
-      const deleted = await Account.findOneAndDelete({ _id: deletedProfileId });
-      if (!deleted) {
-        return res.status(404).send("Profile not found");
-      }
-      // Profil wird in der "related_accounts" Liste des Hauptprofils gelöscht
-      await Account.updateOne(
-        { _id: id },
-        {
-          $pull: { related_accounts: deletedProfileId },
-        }
-      );
-      // Profil wird aus allen angemeldeten Aktivitäten gelöscht
-      await Activity.updateMany({ participants: deletedProfileId }, { $pull: { participants: deletedProfileId } });
-      return res.status(200).send("Profile deleted");
-    } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      return res.status(400).send(error.message);
-    }
+  if (denyChangeRequests === "true") {
+    return res.status(503).send("Change requests are disabled");
   } else {
-    return res.status(403).send("Invalid profile id");
+    const authReq = req as authenticatedRequest;
+    const id = authReq.account.id;
+    const deletedProfileId = req.body.id;
+    if (mongoose.Types.ObjectId.isValid(id) && mongoose.Types.ObjectId.isValid(deletedProfileId)) {
+      try {
+        const deleted = await Account.findOneAndDelete({ _id: deletedProfileId });
+        if (!deleted) {
+          return res.status(404).send("Profile not found");
+        }
+        // Profil wird in der "related_accounts" Liste des Hauptprofils gelöscht
+        await Account.updateOne(
+          { _id: id },
+          {
+            $pull: { related_accounts: deletedProfileId },
+          }
+        );
+        // Profil wird aus allen angemeldeten Aktivitäten gelöscht
+        await Activity.updateMany({ participants: deletedProfileId }, { $pull: { participants: deletedProfileId } });
+        return res.status(200).send("Profile deleted");
+      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return res.status(400).send(error.message);
+      }
+    } else {
+      return res.status(403).send("Invalid profile id");
+    }
   }
 });
 

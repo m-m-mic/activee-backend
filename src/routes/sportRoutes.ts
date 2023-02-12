@@ -3,20 +3,24 @@ import { Sport } from "../models/sports";
 import { authenticatedRequest, authenticateJWT } from "../middleware/authenticateJWT";
 import { Account } from "../models/accounts";
 import { shuffleArray } from "../scripts/activitiesScripts";
-import { SportType } from "../interfaces";
+import { denyChangeRequests } from "../index";
 
 export const sportRoutes = express.Router();
 
 // Lediglich dazu da, neue Gegenstände in die Liste einzufügen. Nicht von Nutzern verwendet
 sportRoutes.post("/sport/", async (req, res) => {
-  try {
-    const newSport = new Sport({ ...req.body });
-    await newSport.save();
-    return res.status(201).send(newSport);
-  } catch (error) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    return res.status(400).send(error.message);
+  if (denyChangeRequests === "true") {
+    return res.status(503).send("Change requests are disabled");
+  } else {
+    try {
+      const newSport = new Sport({ ...req.body });
+      await newSport.save();
+      return res.status(201).send(newSport);
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
   }
 });
 
@@ -99,7 +103,6 @@ sportRoutes.get("/landing-page", async (req, res) => {
       match: { only_logged_in: false },
       select: "id name sport",
     });
-    console.log(sports);
     sports = shuffleArray(sports);
     sports = sports.slice(0, 4);
     for (let i = 0; i < sports.length; i++) {

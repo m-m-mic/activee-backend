@@ -17,6 +17,8 @@ export const secretToken = process.env.SECRET_TOKEN;
 // URL zur Datenbank
 const mongoDbUrl: string = process.env.MONGODB_URL as string;
 
+export const denyChangeRequests = process.env.DENY_CHANGE_REQUEST;
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));

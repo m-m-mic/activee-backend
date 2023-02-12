@@ -7,33 +7,38 @@ import { authenticatedRequest, authenticateJWT } from "../middleware/authenticat
 import { Account } from "../models/accounts";
 import { checkForJWT } from "../middleware/checkForJWT";
 import { Sport } from "../models/sports";
+import { denyChangeRequests } from "../index";
 
 export const activityRoutes = express.Router();
 
 // POST-Request zum Erstellen einer Aktivität
 activityRoutes.post("/activity/", authenticateJWT, async (req, res) => {
-  const authReq = req as authenticatedRequest;
-  const id = authReq.account.id;
-  try {
-    // Neue Aktivität wird erstellt und gespeichert
-    const newActivity = await new Activity({ ...req.body });
-    await newActivity.save();
-    // Daten der neuen Aktivität werden in die activities Liste des Übungsleiters geschrieben
-    await Account.findOneAndUpdate(
-      { _id: id },
-      {
-        $addToSet: {
-          activities: newActivity._id,
-        },
-      }
-    );
-    await Sport.findOneAndUpdate({ _id: newActivity.sport }, { $addToSet: { activities: newActivity._id } });
-    // Neue Aktivität wird zurückgegeben
-    return res.status(201).send(newActivity);
-  } catch (error) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    return res.status(400).send(error.message);
+  if (denyChangeRequests === "true") {
+    return res.status(503).send("Change requests are disabled");
+  } else {
+    const authReq = req as authenticatedRequest;
+    const id = authReq.account.id;
+    try {
+      // Neue Aktivität wird erstellt und gespeichert
+      const newActivity = await new Activity({ ...req.body });
+      await newActivity.save();
+      // Daten der neuen Aktivität werden in die activities Liste des Übungsleiters geschrieben
+      await Account.findOneAndUpdate(
+        { _id: id },
+        {
+          $addToSet: {
+            activities: newActivity._id,
+          },
+        }
+      );
+      await Sport.findOneAndUpdate({ _id: newActivity.sport }, { $addToSet: { activities: newActivity._id } });
+      // Neue Aktivität wird zurückgegeben
+      return res.status(201).send(newActivity);
+    } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return res.status(400).send(error.message);
+    }
   }
 });
 
@@ -251,27 +256,31 @@ activityRoutes.get("/activity/:activityId/participants", authenticateJWT, async 
 
 // PATCH-Request zum Aktualisieren einer Aktivität
 activityRoutes.patch("/activity/:activityId", authenticateJWT, async (req, res) => {
-  const authReq = req as unknown as authenticatedRequest;
-  const updatedActivity = authReq.body;
-  const accountId = authReq.account.id;
-  const activityId = authReq.params.activityId;
-  if (mongoose.Types.ObjectId.isValid(activityId)) {
-    try {
-      const updated = await Activity.findOneAndUpdate({ _id: activityId, "trainers._id": accountId }, updatedActivity, {
-        new: true,
-        runValidators: true,
-      });
-      if (!updated) {
-        return res.status(404).send("Cannot access activity");
-      }
-      return res.send(updated);
-    } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      return res.status(400).send(error.message);
-    }
+  if (denyChangeRequests === "true") {
+    return res.status(503).send("Change requests are disabled");
   } else {
-    return res.status(403).send("Invalid activity id");
+    const authReq = req as unknown as authenticatedRequest;
+    const updatedActivity = authReq.body;
+    const accountId = authReq.account.id;
+    const activityId = authReq.params.activityId;
+    if (mongoose.Types.ObjectId.isValid(activityId)) {
+      try {
+        const updated = await Activity.findOneAndUpdate({ _id: activityId, "trainers._id": accountId }, updatedActivity, {
+          new: true,
+          runValidators: true,
+        });
+        if (!updated) {
+          return res.status(404).send("Cannot access activity");
+        }
+        return res.send(updated);
+      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return res.status(400).send(error.message);
+      }
+    } else {
+      return res.status(403).send("Invalid activity id");
+    }
   }
 });
 
@@ -326,25 +335,29 @@ activityRoutes.patch("/activity/:activityId/save", authenticateJWT, async (req, 
 
 // DELETE-Request zum Löschen einer Aktivität
 activityRoutes.delete("/activity/:activityId", authenticateJWT, async (req, res) => {
-  const id = req.params.activityId;
-  if (mongoose.Types.ObjectId.isValid(id)) {
-    try {
-      const deleted = await Activity.findOneAndDelete({ _id: id });
-      if (!deleted) {
-        return res.status(404).send("Activity not found");
-      }
-      // Aktivität wird aus allen angemeldeten Accounts gelöscht
-      await Account.updateMany({ activities: id }, { $pull: { activities: id } });
-      // Aktivität wird aus verbundener Sportart gelöscht
-      await Sport.updateOne({ activities: id }, { $pull: { activities: id } });
-      return res.send(`Successfully deleted activity ${deleted._id}`);
-    } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      return res.status(400).send(error.message);
-    }
+  if (denyChangeRequests === "true") {
+    return res.status(503).send("Change requests are disabled");
   } else {
-    return res.status(403).send("Invalid activity id");
+    const id = req.params.activityId;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      try {
+        const deleted = await Activity.findOneAndDelete({ _id: id });
+        if (!deleted) {
+          return res.status(404).send("Activity not found");
+        }
+        // Aktivität wird aus allen angemeldeten Accounts gelöscht
+        await Account.updateMany({ activities: id }, { $pull: { activities: id } });
+        // Aktivität wird aus verbundener Sportart gelöscht
+        await Sport.updateOne({ activities: id }, { $pull: { activities: id } });
+        return res.send(`Successfully deleted activity ${deleted._id}`);
+      } catch (error) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        return res.status(400).send(error.message);
+      }
+    } else {
+      return res.status(403).send("Invalid activity id");
+    }
   }
 });
 
