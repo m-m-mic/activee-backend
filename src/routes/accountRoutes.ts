@@ -119,7 +119,7 @@ accountRoutes.patch("/account/info", authenticateJWT, async (req: Request, res: 
               "trainers.$.last_name": updated.last_name,
               "trainers.$.phone_number": updated.phone_number,
             },
-          }
+          },
         );
         return res.send(updated);
       } catch (error) {
@@ -173,7 +173,7 @@ accountRoutes.post("/account/create-profile", authenticateJWT, async (req, res) 
               related_accounts: newProfile.id,
             },
           },
-          { new: true, runValidators: true }
+          { new: true, runValidators: true },
         );
         // Neuer Token für das Profil wird generiert und ans Frontend zurückgegeben
         const accessToken = await jwt.sign({ id: newProfile.id, type: newProfile.type }, secretToken);
@@ -213,7 +213,7 @@ accountRoutes.delete("/account/delete-profile", authenticateJWT, async (req, res
           { _id: id },
           {
             $pull: { related_accounts: deletedProfileId },
-          }
+          },
         );
         // Profil wird aus allen angemeldeten Aktivitäten gelöscht
         await Activity.updateMany({ participants: deletedProfileId }, { $pull: { participants: deletedProfileId } });

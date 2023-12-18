@@ -29,7 +29,7 @@ activityRoutes.post("/activity/", authenticateJWT, async (req, res) => {
           $addToSet: {
             activities: newActivity._id,
           },
-        }
+        },
       );
       await Sport.findOneAndUpdate({ _id: newActivity.sport }, { $addToSet: { activities: newActivity._id } });
       // Neue Aktivität wird zurückgegeben
@@ -88,7 +88,7 @@ activityRoutes.get("/activity/recommendations", checkForJWT, async (req, res) =>
           membership_fee: false,
           dates: false,
           address: false,
-        }
+        },
       ).populate("sport", "id name");
       let activities = shuffleArray(allActivities);
       const totalResults = activities.length;
@@ -212,7 +212,7 @@ activityRoutes.get("/activity/:activityId", checkForJWT, async (req, res) => {
             trainers: false,
             participants: false,
             only_logged_in: false,
-          }
+          },
         )
           .populate("sport", "id name")
           .populate("languages", "id name")
@@ -238,7 +238,7 @@ activityRoutes.get("/activity/:activityId/participants", authenticateJWT, async 
     try {
       const activity = await Activity.findOne(
         { _id: activityId, "trainers._id": accountId },
-        { id: true, name: true, club: true, participants: true, trainers: true }
+        { id: true, name: true, club: true, participants: true, trainers: true },
       ).populate("participants", "id first_name last_name birthday email parent_email");
       if (!activity) {
         return res.status(404).send("Cannot access activity");
@@ -303,7 +303,7 @@ activityRoutes.patch("/activity/:activityId/save", authenticateJWT, async (req, 
               },
               {
                 runValidators: true,
-              }
+              },
             ).then(() => (response += `deleted account id ${accountId} from activity id ${activityId}\n`));
           } else {
             activity.participants.push(accountId);
@@ -314,7 +314,7 @@ activityRoutes.patch("/activity/:activityId/save", authenticateJWT, async (req, 
               },
               {
                 runValidators: true,
-              }
+              },
             ).then(() => (response += `added account id ${accountId} from activity id ${activityId}\n`));
           }
         }
@@ -400,7 +400,7 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
           additional_info: false,
           maximum_participants: false,
           membership_fee: false,
-        }
+        },
       ).populate("sport", "id name");
       // Aktivitäten aus der preferred-Liste werden aus der all-Liste gelöscht
       const cleanedActivitiesList = await deleteDuplicateEntries(preferredActivities, allActivities);
@@ -443,7 +443,7 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
           membership_fee: false,
           dates: false,
           address: false,
-        }
+        },
       ).populate("sport", "id name");
       let activities = searchActivities(searchQuery, allActivities);
       const totalResults = activities.length;
