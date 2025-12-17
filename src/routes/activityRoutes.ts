@@ -409,7 +409,8 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
       // All-Liste wird an preferred-Liste angefügt
       const sortedActivities = preferredActivities.concat(cleanedActivitiesList);
       // Liste wird anhand von Suchbegriff gefiltered
-      // @ts-expect-error type chaos
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       let activities = searchActivities(searchQuery, sortedActivities);
       const totalResults = activities.length;
       const startIndex = page * limit;
@@ -448,7 +449,8 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
           address: false,
         },
       ).populate("sport", "id name");
-      // @ts-expect-error type chaos
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       let activities = searchActivities(searchQuery, allActivities as ActivityType[]);
       const totalResults = activities.length;
       const startIndex = page * limit;
