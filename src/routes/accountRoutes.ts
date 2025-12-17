@@ -3,7 +3,6 @@ import { authenticatedRequest, authenticateJWT } from "../middleware/authenticat
 import express, { Request, Response } from "express";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
-import { AccountType } from "../interfaces";
 import { getAccountListById } from "../scripts/accountScripts";
 import { denyChangeRequests, secretToken } from "../index";
 import { Activity } from "../models/activities";
