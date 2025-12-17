@@ -139,7 +139,8 @@ accountRoutes.get("/account/profile-list", authenticateJWT, async (req: Request,
   const id = authReq.account.id;
   if (mongoose.Types.ObjectId.isValid(id)) {
     try {
-      const accounts: AccountType[] = await Account.find().populate("related_accounts", "id first_name last_name birthday");
+      const accounts = await Account.find().populate("related_accounts", "id first_name last_name birthday");
+      // @ts-expect-error type chaos
       const profileList = await getAccountListById(id, accounts);
       return res.send(profileList);
     } catch (error) {

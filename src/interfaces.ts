@@ -1,6 +1,9 @@
+import { Types } from "mongoose";
+
 // TypeScript Interface mit allen Typen für values in einem Account
+
 export interface AccountType {
-  _id: string;
+  _id: Types.ObjectId;
   email: string;
   password: string;
   type: string;
@@ -23,7 +26,7 @@ export interface AccountType {
 
 // TypeScript Interface mit allen Typen für values in einer Aktivität
 export interface ActivityType {
-  _id: string;
+  _id: Types.ObjectId;
   name: string;
   club: string;
   sport: PreselectOption;
@@ -34,7 +37,7 @@ export interface ActivityType {
   maximum_participants: number;
   requirements: string;
   required_items: PreselectOption[];
-  addition_info: string;
+  additional_info: string;
   membership_fee: string;
   dates: Date[];
   address: Address;
@@ -54,12 +57,12 @@ interface TableDate {
   starting_hour: number;
 }
 interface RelatedAccount {
-  _id: string;
+  _id: Types.ObjectId;
   first_name: string;
   last_name: string;
 }
 interface AccountActivity {
-  _id: string;
+  _id: Types.ObjectId;
   name: string;
   sport: PreselectOption;
 }
@@ -75,7 +78,7 @@ interface SportDescription {
 }
 
 interface PreselectOption {
-  _id: string;
+  _id: Types.ObjectId;
   name: string;
 }
 
@@ -91,7 +94,7 @@ interface Date {
 }
 
 interface Trainer {
-  _id: string;
+  _id: Types.ObjectId;
   first_name: string;
   last_name: string;
   email: string;
@@ -101,7 +104,7 @@ interface Trainer {
 }
 
 interface Participant {
-  _id: string;
+  _id: Types.ObjectId;
   first_name: string;
   last_name: string;
   email: string;

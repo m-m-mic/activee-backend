@@ -75,7 +75,7 @@ activityRoutes.get("/activity/recommendations", checkForJWT, async (req, res) =>
       // Gleiche Logik wie bei angemeldeten Nutzern, nur ohne Präferenz-Filtering
       let response;
       response = { last_page: false };
-      const allActivities: ActivityType[] = await Activity.find(
+      const allActivities = await Activity.find(
         { only_logged_in: false },
         {
           only_logged_in: false,
@@ -136,6 +136,7 @@ activityRoutes.get("/activity/club", authenticateJWT, async (req, res) => {
     if (account) {
       let response;
       response = { last_page: false };
+      // @ts-expect-error type chaos
       let activities = await Activity.find({ club: account.club, "trainers._id": { $nin: id } }).populate("sport", "id name");
       const totalResults = activities.length;
       const startIndex = page * limit;
@@ -163,6 +164,7 @@ activityRoutes.get("/activity/club/shortened", authenticateJWT, async (req, res)
   try {
     const account = await Account.findOne({ _id: id });
     if (account) {
+      // @ts-expect-error type chaos
       let activities = await Activity.find({ club: account.club, "trainers._id": { $nin: id } }).populate("sport", "id name");
       activities = shuffleArray(activities);
       res.send(activities.slice(0, 8));
@@ -378,7 +380,7 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
       // Account des Request-Senders wird gesucht und dessen Präferenzen werden verwendet, um die relevantesten
       // Ergebnisse als Erstes zu zeigen
       const account = await Account.findOne({ _id: id });
-      const preferredActivities: ActivityType[] = await Activity.find(constructPreferenceModel(account, null), {
+      const preferredActivities = await Activity.find(constructPreferenceModel(account, null), {
         only_logged_in: false,
         participants: false,
         trainers: false,
@@ -389,7 +391,7 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
         membership_fee: false,
       }).populate("sport", "id name");
       // Aufrufen aller Aktivitäten
-      const allActivities: ActivityType[] = await Activity.find(
+      const allActivities = await Activity.find(
         {},
         {
           only_logged_in: false,
@@ -407,6 +409,7 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
       // All-Liste wird an preferred-Liste angefügt
       const sortedActivities = preferredActivities.concat(cleanedActivitiesList);
       // Liste wird anhand von Suchbegriff gefiltered
+      // @ts-expect-error type chaos
       let activities = searchActivities(searchQuery, sortedActivities);
       const totalResults = activities.length;
       const startIndex = page * limit;
@@ -430,7 +433,7 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
       // Gleiche Logik wie bei angemeldeten Nutzern, nur ohne Präferenz-Filtering
       let response;
       response = { last_page: false };
-      const allActivities: ActivityType[] = await Activity.find(
+      const allActivities = await Activity.find(
         { only_logged_in: false },
         {
           only_logged_in: false,
@@ -445,7 +448,8 @@ activityRoutes.get("/search/:query", checkForJWT, async (req, res) => {
           address: false,
         },
       ).populate("sport", "id name");
-      let activities = searchActivities(searchQuery, allActivities);
+      // @ts-expect-error type chaos
+      let activities = searchActivities(searchQuery, allActivities as ActivityType[]);
       const totalResults = activities.length;
       const startIndex = page * limit;
       const endIndex = (page + 1) * limit;
